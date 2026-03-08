@@ -1,4 +1,9 @@
+<<<<<<< Updated upstream
 README_kmeans_chunked
+=======
+Note: This github repository was created on 08/03/26. Development was initially being organised and logged locally.
+The original creation of this program was on the 23/12/25.
+>>>>>>> Stashed changes
 
 Required libraries:
 numpy: math library for python.
