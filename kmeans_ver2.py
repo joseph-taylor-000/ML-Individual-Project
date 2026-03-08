@@ -147,11 +147,7 @@ for i in range(K_ideal):
 plt.legend(handles=handles, title="Clusters", loc="upper right")
 plt.xlabel("Time (s)")
 plt.ylabel("Partial Discharge Magnitude (pC)")
-<<<<<<< Updated upstream
-plt.title("PD Events Clustering: Magnitude vs Time")
-=======
 plt.title("K-means Clustering: PD Magnitude vs Time")
->>>>>>> Stashed changes
 plt.tight_layout()
 plt.savefig("kmeans_1hr.png", dpi = 300)
 plt.show()
