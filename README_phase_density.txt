@@ -5,9 +5,10 @@ Required libraries:
 matplotlib.pyplot: graphical plotting library for python.
 pandas: data processing library for python.
 numpy: math library for python.
+glob: file directory library
 
 #data initialisation
-* create pandas dataframe from csv 
+* create pandas dataframe from concatenated file 
 * drop NaN rows from df
 * optionally filter magnitude ranges
 
