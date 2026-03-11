@@ -60,7 +60,7 @@ print("Files scaled...\n")
 clusterer = hdbscan.HDBSCAN(
     min_cluster_size=MIN_CLUSTER_SIZE,
     metric="euclidean",
-    core_dist_n_jobs=4,
+    core_dist_n_jobs=6,
     approx_min_span_tree=True,
     prediction_data=True
 )
@@ -84,10 +84,10 @@ fig, ax = plt.subplots()
 print("HDBSCAN...\n")
 
 for file in test_data:
-    df = pd.read_csv(file, usecols=["q_pC", "phase_deg"])
+    df = pd.read_csv(file, usecols=["q_pC", "phase_deg",  "d_time_s"])
     df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
     df.dropna(inplace=True)
-    X = scaler.transform(df)
+    X = scaler.transform(df[["q_pC", "phase_deg"]])
     cluster, strengths = hdbscan.prediction.approximate_predict(clusterer, X)
 
     df["cluster"], df["strengths"] = cluster, strengths
