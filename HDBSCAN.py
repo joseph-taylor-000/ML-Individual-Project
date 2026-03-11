@@ -121,9 +121,9 @@ print("Time: %s seconds" % (time.time() - start_time))
 print(df)
 
 
-ax.set_xlabel("Time (s)")
+ax.set_xlabel("Phase (deg)")
 ax.set_ylabel("Partial Discharge Magnitude (pC)")
-ax.set_title("HDBSCAN Clustering: PD Magnitude vs Time")
+ax.set_title("HDBSCAN Clustering: PD Magnitude vs Phase")
 
 fig.colorbar(scatter, ax=ax, label="Cluster") 
 
