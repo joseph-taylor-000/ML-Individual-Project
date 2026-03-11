@@ -5,7 +5,9 @@ pandas: data processing library for python.
 numpy: math library for python.
 
 #data initialisation
-* create dataframe, read data from csv
+* read files from directory:
+* sort files
+for each file:
 * drop NaN rows
 * optional filter
 * remove negative and zero values for delta t from dataframe for log compatibility
