@@ -3,6 +3,7 @@ import pandas as pd
 import hdbscan
 from sklearn.preprocessing import StandardScaler
 import glob
+import os
 import time
 
 start_time = time.time()
@@ -13,7 +14,13 @@ MIN_CLUSTER_SIZE = 100
 #========dataset initialisation=======
 
 #directory = input("Enter dataset directory: ")
-directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\0 to 1h\*"
+directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\255 to 256 h\*"
+output_dir = r"M:\OneDrive - The University of Manchester\ML_Individual_Project"
+
+os.makedirs(output_dir, exist_ok=True) 
+#safety - prevents error if output_dir already exists, 
+#creates directory if does not exist
+
 files = glob.glob(directory)
 print("\nNumber of files found:", len(files))
 #df = df[(df["q_pC"] <= 5) & (df["q_pC"] >= -5)] #optional filter 
@@ -30,16 +37,17 @@ for i in range (len(files)):
     
 #file selection
 sample = files[:1]
-test_data = files[2:3]
+test_data = files[2:]
 
 #HDBSCAN training using sample
 scaler = StandardScaler()
-data_list=[]
+data_list=[] 
 
 print("Scaling sample data...\n")
 
 for file in sample: 
-    df = pd.read_csv(file, usecols=["dq_pC", "time_s"])
+    df = pd.read_csv(file, usecols=["q_pC", "phase_deg"])
+    df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
     df.dropna(inplace=True)
     scaler.partial_fit(df)
     data_list.append(df)
@@ -64,7 +72,8 @@ print("Training Complete\n")
 #HDBSCAN clustering and plotting
 print("Scaling test data...\n")
 for file in test_data:
-    df = pd.read_csv(file, usecols=["dq_pC", "time_s"])
+    df = pd.read_csv(file, usecols=["q_pC", "phase_deg"])
+    df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
     df.dropna(inplace=True)
     scaler.partial_fit(df)
 
@@ -75,7 +84,8 @@ fig, ax = plt.subplots()
 print("HDBSCAN...\n")
 
 for file in test_data:
-    df = pd.read_csv(file, usecols=["dq_pC", "time_s"])
+    df = pd.read_csv(file, usecols=["q_pC", "phase_deg"])
+    df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
     df.dropna(inplace=True)
     X = scaler.transform(df)
     cluster, strengths = hdbscan.prediction.approximate_predict(clusterer, X)
@@ -83,8 +93,8 @@ for file in test_data:
     df["cluster"], df["strengths"] = cluster, strengths
 
     scatter = ax.scatter(
-        df["time_s"],
-        df["dq_pC"],
+        df["phase_deg"],
+        df["q_pC"],
         c=cluster,
         cmap="tab10",
         s=1,
@@ -93,9 +103,23 @@ for file in test_data:
         marker=','
     )
 
+    print("Saving...")
+
+    for cluster, group in df.groupby("cluster"):
+
+        file_path = os.path.join(output_dir, f"HDBSCAN_cluster_{cluster}.txt")
+
+        group.to_csv(
+            file_path,
+            mode="a",
+            header=not os.path.exists(file_path),
+            index=False
+        )
+
 print("HDBSCAN Complete\n")
 print("Time: %s seconds" % (time.time() - start_time))
 print(df)
+
 
 ax.set_xlabel("Time (s)")
 ax.set_ylabel("Partial Discharge Magnitude (pC)")
