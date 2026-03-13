@@ -5,7 +5,10 @@ Updated from previous commit. See previous commit for older version of README.
 
 Required libraries:
 matplotlib.pyplot: graphical plotting library for python.
+matplotlib.colors: allows for information regarding colours to be assigned
+matplotlib.patches: allows for geometry to be drawn on plots
 pandas: data processing library for python.
+numpy: math library for python.
 hdbscan: library containing optimised Hierarchical Density-Based Spacial Clustering of Applications with Noise (HSBSCAN) algorithm. 
 sklearn: contains clustering (k-means) algorithm, scaling algorithms, example datasets.
 	>>StandardScalar: scales data using mean and standard deviation to ensure similar feature ranges.
@@ -19,6 +22,7 @@ time: allows for time keeping in python. Used to time execution of this program.
 #Training
 * for each file:
 	>> creates dataframe
+	>> chooses sample from data
 	>> removes NaN rows
 	>> applies scaling to data
 	>> adds to data list
@@ -66,3 +70,6 @@ marker-size >> s=1, #smallest = 1
 transparency >> alpha=1, #no transparency, most efficient 
 rasterization >> rasterized = True, #prevents vector shapes, uses pixels as points for better efficiency 
 marker-type >> marker = ',' #smallest marker type, better efficiency
+
+Two for loops are used to assertain the colours used for each cluster and assign them to the graphs legend.
+

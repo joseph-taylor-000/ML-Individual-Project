@@ -18,7 +18,7 @@ MIN_CLUSTER_SIZE = 100
 
 #directory = input("Enter dataset directory: ")
 directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\255 to 256 h\*"
-output_dir = r"M:\OneDrive - The University of Manchester\ML_Individual_Project"
+output_dir = r"M:\OneDrive - The University of Manchester\ML_Individual_Project\HDBSCAN_clusters"
 
 os.makedirs(output_dir, exist_ok=True) 
 #safety - prevents error if output_dir already exists, 
@@ -39,8 +39,8 @@ for i in range (len(files)):
     print(files[i] + "\n")
     
 #file selection
-sample = files[:1]
-test_data = files[2:]
+sample = files[:10]
+test_data = files[10:15]
 
 #HDBSCAN training using sample
 scaler = StandardScaler()
@@ -50,7 +50,8 @@ print("Scaling sample data...\n")
 
 for file in sample: 
     df = pd.read_csv(file, usecols=["q_pC", "phase_deg"])
-    df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
+    #df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
+    df = df.sample(100000)
     df.dropna(inplace=True)
     scaler.partial_fit(df)
     data_list.append(df)
@@ -76,8 +77,8 @@ print("Training Complete\n")
 print("Scaling test data...\n")
 for file in test_data:
     df = pd.read_csv(file, usecols=["q_pC", "phase_deg"])
-    df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
-    df = df.sample(1000)
+    #df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
+    df = df.sample(100000)
     df.dropna(inplace=True)
     scaler.partial_fit(df)
 
@@ -89,8 +90,8 @@ print("HDBSCAN...\n")
 
 for file in test_data:
     df = pd.read_csv(file, usecols=["q_pC", "phase_deg",  "d_time_s"])
-    df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
-    df=df.sample(1000)
+    #df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
+    df = df.sample(100000) #if sample size smaller than training samples, data may be added to clusters non-sequentially, which breaks colour index later
     df.dropna(inplace=True)
     X = scaler.transform(df[["q_pC", "phase_deg"]])
     cluster, strengths = hdbscan.prediction.approximate_predict(clusterer, X)
@@ -101,7 +102,7 @@ for file in test_data:
         df["phase_deg"],
         df["q_pC"],
         c=cluster,
-        cmap="tab10",
+        cmap="tab20",
         s=1,
         alpha=1,
         rasterized=True,
@@ -120,7 +121,7 @@ for file in test_data:
 
     ax.legend(handles=handles, title="Clusters", loc="lower right")
 
-    print("Saving...")
+    print(f"Saving clusters for part {file.rsplit('part', 1)[1].replace('.csv', '')}...")
 
     for cluster, group in df.groupby("cluster"):
 
