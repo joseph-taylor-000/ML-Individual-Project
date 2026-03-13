@@ -1,10 +1,13 @@
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 import hdbscan
 from sklearn.preprocessing import StandardScaler
 import glob
 import os
 import time
+import matplotlib.colors as mcolors
+import matplotlib.patches as mpatches
 
 start_time = time.time()
 
@@ -74,6 +77,7 @@ print("Scaling test data...\n")
 for file in test_data:
     df = pd.read_csv(file, usecols=["q_pC", "phase_deg"])
     df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
+    df = df.sample(1000)
     df.dropna(inplace=True)
     scaler.partial_fit(df)
 
@@ -86,6 +90,7 @@ print("HDBSCAN...\n")
 for file in test_data:
     df = pd.read_csv(file, usecols=["q_pC", "phase_deg",  "d_time_s"])
     df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
+    df=df.sample(1000)
     df.dropna(inplace=True)
     X = scaler.transform(df[["q_pC", "phase_deg"]])
     cluster, strengths = hdbscan.prediction.approximate_predict(clusterer, X)
@@ -102,6 +107,18 @@ for file in test_data:
         rasterized=True,
         marker=','
     )
+
+    colours = []
+    for i in np.unique(cluster):
+        colour = scatter.cmap(scatter.norm(i)) #replicates colour assignment from matplotlib  
+        colours.append(colour)
+
+    handles = []
+    for i in np.unique(cluster):
+        patch = mpatches.Patch(color=colours[i], label=f"Cluster {i}")
+        handles.append(patch)
+
+    ax.legend(handles=handles, title="Clusters", loc="lower right")
 
     print("Saving...")
 
@@ -125,7 +142,7 @@ ax.set_xlabel("Phase (deg)")
 ax.set_ylabel("Partial Discharge Magnitude (pC)")
 ax.set_title("HDBSCAN Clustering: PD Magnitude vs Phase")
 
-fig.colorbar(scatter, ax=ax, label="Cluster") 
+#fig.colorbar(scatter, ax=ax, label="Cluster") 
 
 plt.tight_layout()
 plt.show()
