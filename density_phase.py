@@ -1,6 +1,5 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
 import glob as glob
 
 files = glob.glob("M:/OneDrive - The University of Manchester/ML_dataset/New datasets_Sample S4.4/Noise_0 to 120s/*.csv")
@@ -41,13 +40,12 @@ for file in files:
         s=10,
         alpha=0.6
     )
-
     
     ax2.scatter(
         density_phase_df["phase_deg_rounded"],
         density_phase_df["q_pC"],
         marker = 'x',
-        color='red',
+        c='red',
         s=10,
         alpha=0.6
     )
