@@ -15,6 +15,7 @@ files.sort(
 ) 
 
 fig, ax = plt.subplots()
+max = 0
 
 for file in files:
     print(file)
@@ -30,12 +31,15 @@ for file in files:
 
     df_grouped = (df.groupby(["phase_deg_rounded", "d_time_s"]) .size()).reset_index(name = "count")
 
+    if (df_grouped["count"].max()> max):
+        max = df_grouped["count"].max()
+
     #plot 
     scatter = ax.scatter(
         df_grouped["phase_deg_rounded"],
         df_grouped["d_time_s"],
         c=df_grouped["count"],
-        norm=LogNorm(vmin=1, vmax=200),
+        norm=LogNorm(vmin=1, vmax=max),
         cmap="plasma",
         marker = '.',
         s=10,
