@@ -14,6 +14,7 @@ for each file:
 * create delta t bin by rounding to 7dp
 * create phase bin by rounding to nearest degree
 * create new dataframe with count column to quantify the number of events which share phase and time bin
+* determine max values for colour range
 
 #plot
 * scatter plot:

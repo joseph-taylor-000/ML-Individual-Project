@@ -15,7 +15,7 @@ files.sort(
 ) 
 
 fig, ax = plt.subplots()
-max = 0
+max_values = []
 
 for file in files:
     print(file)
@@ -31,15 +31,31 @@ for file in files:
 
     df_grouped = (df.groupby(["phase_deg_rounded", "d_time_s"]) .size()).reset_index(name = "count")
 
-    if (df_grouped["count"].max()> max):
-        max = df_grouped["count"].max()
+    max_values.append(df_grouped["count"].max())
+
+
+
+for file in files:
+    print(file)
+    df = pd.read_csv(file, usecols=["phase_deg", "q_pC", "d_time_s"])
+    df.dropna(inplace=True)
+
+    #positive times only
+    df_pos = df[df["d_time_s"] > 0]
+
+    #phase-time bins
+    df["d_time_s"] = df["d_time_s"].round(7) #rounds d_time to 7 decimal places (0.1x micro range)
+    df["phase_deg_rounded"] = df["phase_deg"].round().astype(int) #rounding phase to nearest degree
+
+    df_grouped = (df.groupby(["phase_deg_rounded", "d_time_s"]) .size()).reset_index(name = "count")
+    print(df_grouped)
 
     #plot 
     scatter = ax.scatter(
         df_grouped["phase_deg_rounded"],
         df_grouped["d_time_s"],
         c=df_grouped["count"],
-        norm=LogNorm(vmin=1, vmax=max),
+        norm=LogNorm(vmin=1, vmax=max(max_values)),
         cmap="plasma",
         marker = '.',
         s=10,
