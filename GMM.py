@@ -16,7 +16,7 @@ scaler = StandardScaler()
 df_scaled = scaler.fit_transform(df)
 
 #gaussian mixture model
-gm = GaussianMixture(n_components= 4, 
+gm = GaussianMixture(n_components= 2, 
                      covariance_type = 'full',
                      random_state= 0,
                      init_params= 'kmeans',
