@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 import matplotlib.patches as mpatches
 from sklearn.cluster import KMeans
 from sklearn.cluster import MiniBatchKMeans
@@ -28,7 +27,7 @@ for i in range (len(files)):
     print(files[i] + "\n")
     
 #file selection
-files = files[:242]
+files = files[:2]
 
 #=======elbow method========
 
@@ -37,7 +36,7 @@ elbow_files = files[:1]
 data_list = []
 
 for file in elbow_files:
-    df = pd.read_csv(file, usecols=["dq_pC"]) 
+    df = pd.read_csv(file, usecols=["q_pC", "phase_deg"]) 
     df.dropna(inplace=True)
     data_list.append(df)
 
@@ -69,8 +68,8 @@ loss = np.array(loss)
 gradient = np.gradient(loss)
 second_diff = np.gradient(gradient)
 
-K_ideal = np.argmax(second_diff) + 1
-K_ideal = 3; #hardset value
+K_ideal = np.argmax(second_diff) + 2
+#K_ideal = 3; #hardset value
 
 print('\n ideal K value: %2d' % K_ideal)
 
@@ -97,13 +96,13 @@ kmeans = MiniBatchKMeans(
 
 #scaling
 for file in files:
-    df = pd.read_csv(file, usecols=["dq_pC"])
+    df = pd.read_csv(file, usecols=["q_pC", "phase_deg"])
     df.dropna(inplace=True)
     scaler.partial_fit(df)
 
 #kmeans fit
 for file in files:
-    df = pd.read_csv(file, usecols=["dq_pC"])
+    df = pd.read_csv(file, usecols=["q_pC", "phase_deg"])
     df.dropna(inplace=True)
     X = scaler.transform(df)
     kmeans.partial_fit(X)
@@ -112,16 +111,16 @@ for file in files:
 plt.figure(figsize=(12, 5))
 
 for file in files:
-    df = pd.read_csv(file, usecols=["time_s", "dq_pC"])
+    df = pd.read_csv(file, usecols=["q_pC", "phase_deg"])
     df.dropna(inplace=True)
 
-    X = scaler.transform(df[["dq_pC"]])
+    X = scaler.transform(df[["q_pC", "phase_deg"]])
     df["cluster"] = kmeans.predict(X)
 
     #add file to scatter
     scatter = plt.scatter(
-    df["time_s"],      
-    df["dq_pC"],       
+    df["phase_deg"],      
+    df["q_pC"],       
     c=df["cluster"],   
     cmap="tab10",            
     s=1,
@@ -134,14 +133,15 @@ for file in files:
 print(df.head())
 
 #plot
-cmap = plt.get_cmap("tab10")  
-colors = []
+ 
+colours = []
 for i in range(K_ideal):
-    colors.append(cmap(i))
+    colour = scatter.cmap(scatter.norm(i))
+    colours.append(colour)
 
 handles = []
 for i in range(K_ideal):
-    patch = mpatches.Patch(color=colors[i], label=f"Cluster {i}")
+    patch = mpatches.Patch(color=colours[i], label=f"Cluster {i}")
     handles.append(patch)
 
 plt.legend(handles=handles, title="Clusters", loc="upper right")
@@ -149,5 +149,5 @@ plt.xlabel("Time (s)")
 plt.ylabel("Partial Discharge Magnitude (pC)")
 plt.title("K-means Clustering: PD Magnitude vs Time")
 plt.tight_layout()
-plt.savefig("kmeans_1hr.png", dpi = 300)
+#plt.savefig("kmeans_1hr.png", dpi = 300)
 plt.show()
