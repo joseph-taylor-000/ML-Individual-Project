@@ -13,20 +13,19 @@ class Autoencoder(nn.Module):
         
         self.encoder = nn.Sequential(
             #latent space
-            nn.Linear(self.input_size, 256),
+            nn.Linear(self.input_size, int(self.input_size/4)),
             nn.ReLU(),
-            nn.Linear(256, 64),
+            nn.Linear(int(self.input_size/4), int(self.input_size/8)),
             nn.ReLU(),
-            nn.Linear(64, 16)
+            nn.Linear(int(self.input_size/8), int(self.input_size/16))
         )
 
         self.decoder = nn.Sequential(
-            nn.Linear(16, 64),
+            nn.Linear(int(self.input_size/16), int(self.input_size/8)),
             nn.ReLU(),
-            nn.Linear(64, 256),
+            nn.Linear(int(self.input_size/8), int(self.input_size/4)),
             nn.ReLU(),
-            nn.Linear(256, self.input_size),
-            nn.Sigmoid()
+            nn.Linear(int(self.input_size/4), self.input_size),
         )
 
     def forward(self, x):
@@ -53,7 +52,7 @@ def generate_hist(data, phase_bins, q_bins, q_min, q_max):
 #data initialisation
 
 directory_val = 3 
-use_noise_data = False
+use_noise_data = True
 
 #directory selection
 if directory_val == 1:
@@ -69,7 +68,7 @@ else:
 
 #file loading
 files = glob.glob(directory)
-files = files[:1]
+files = files[:10]
 files.sort(
     key=lambda f: 
     int(f.rsplit('part', 1)[1]
@@ -89,7 +88,7 @@ for file in files:
     #df = df[(df["q_pC"] <= 1) & (df["q_pC"] >= -1)] #low level filter
 
     #df = df[(df["q_pC"] >= 1) | (df["q_pC"] <= -1)] #high level filter
-    #df = df[(df["q_pC"] <= 20) & (df["q_pC"] >= -20)] #remove significant anomalies to improve bin accuracy while preserving input size, according to full data histograms
+    df = df[(df["q_pC"] <= 20) & (df["q_pC"] >= -20)] #remove significant anomalies to improve bin accuracy while preserving input size, according to full data histograms
 
     df.dropna(inplace=True)
     min_charges.append(df["q_pC"].min())
@@ -138,7 +137,7 @@ for file in files:
 #create tensor for all samples
 X_train = torch.tensor(all_samples, dtype=torch.float32) #convert all_samples to single tensor
 X_train = X_train.to('cuda') #enable GPU processing
-X_train = X_train / X_train.max() #min-max normalisation ---this may be wrong for non-absolute values
+X_train = 2*((X_train - X_train.min()) / (X_train.max() - X_train.min())) - 1 #min-max normalisation between -1, 1
 
 #define data loader to batch training
 data_loader = torch.utils.data.DataLoader(
@@ -159,6 +158,7 @@ optimiser = optim.Adam(model.parameters(),
 #training
 epochs = 50 #alter for min loss
 outputs = []
+losses = []
 
 for epoch in range(epochs):
     for batch in data_loader:
@@ -173,6 +173,7 @@ for epoch in range(epochs):
         optimiser.step() #updates weight values accordingly
 
     print(f"Epoch: {epoch+1}, Loss: {loss.item():.6f}")
+    losses.append(loss.item())
     outputs.append((epoch, data, recon))
 
 #testing
@@ -204,9 +205,10 @@ for file in files:
 #create tensor for all samples
 X_test = torch.tensor(all_samples, dtype=torch.float32) #convert all_samples to single tensor
 X_test = X_test.to('cuda') #enable GPU processing
-X_test = X_test / X_test.max() #min-max normalisation ---this may be wrong for non-absolute values
+X_test = 2*((X_test - X_test.min()) / (X_test.max() - X_test.min())) - 1 #min-max normalisation between -1, 1
 
 hist_shape = (phase_bins_count-1, q_bins_count-1) #bin sizes - 1  
+threshold = np.mean(losses) + 2 * np.std(losses, ddof=1) #anomaly threshold
 
 #training data reconstructions
 with torch.no_grad(): #prevent weight training
@@ -214,6 +216,13 @@ with torch.no_grad(): #prevent weight training
     train_errors = torch.mean((X_train - recon_train)**2, dim=1) #mean square error for single sample (feature average, dim=1)
     train_errors = train_errors.cpu().numpy() #move to program host memory as numpy array
     print(train_errors)
+
+    normal_id_train = train_errors <= threshold #boolean index of analagous values
+    anomaly_id_train = train_errors >= threshold #boolean index of anomalous values - can be used to extract anomalies from input pattern
+
+    print(normal_id_train)
+    X_train = X_train[normal_id_train]         #keep only analagous activity 
+    recon_test = recon_train[normal_id_train] 
 
     #recreate histograms from flattened tensors
     original = X_train[0].cpu().numpy().reshape(hist_shape) #select first item in training data tensor, move to host memory as numpy array, reshape to original histogram dimensions
@@ -229,6 +238,8 @@ with torch.no_grad(): #prevent weight training
                origin='lower',
                extent=[0, 360, q_min, q_max])
     plt.colorbar()
+    plt.xlabel("Phase (deg)")
+    plt.ylabel("Charge (pC)")
 
     #reconstructed
     plt.subplot(1,2,2) #2nd graph
@@ -238,9 +249,12 @@ with torch.no_grad(): #prevent weight training
                origin='lower',
                extent=[0, 360, q_min, q_max])
     plt.colorbar()
+    plt.xlabel("Phase (deg)")
+    plt.ylabel("Charge (pC)")
 
     plt.tight_layout()
     plt.show()
+
 
 #test data reconstructions
 with torch.no_grad(): #prevent weight training
@@ -248,6 +262,13 @@ with torch.no_grad(): #prevent weight training
     test_errors = torch.mean((X_test - recon_test)**2, dim=1) #mean square error for single sample (feature average, dim=1)
     test_errors = test_errors.cpu().numpy() #move to program host memory as numpy array
     print(test_errors)
+
+    normal_id_test = test_errors <= threshold #boolean index of analagous values
+    anomaly_id_test = test_errors >= threshold #boolean index of anomalous values - can be used to extract anomalies from input pattern
+
+    print(normal_id_test)
+    X_test = X_test[normal_id_test]         #keep only analagous activity 
+    recon_test = recon_test[normal_id_test] 
 
     #recreate histograms from flattened tensors
     original = X_test[0].cpu().numpy().reshape(hist_shape) #select first item in training data tensor, move to host memory as numpy array, reshape to original histogram dimensions
@@ -263,6 +284,8 @@ with torch.no_grad(): #prevent weight training
                origin='lower', 
                extent=[0, 360, q_min, q_max])
     plt.colorbar()
+    plt.xlabel("Phase (deg)")
+    plt.ylabel("Charge (pC)")
 
     #reconstructed
     plt.subplot(1,2,2) #2nd graph
@@ -272,6 +295,8 @@ with torch.no_grad(): #prevent weight training
                origin='lower',
                extent=[0, 360, q_min, q_max])
     plt.colorbar()
+    plt.xlabel("Phase (deg)")
+    plt.ylabel("Charge (pC)")
 
     plt.tight_layout()
     plt.show()

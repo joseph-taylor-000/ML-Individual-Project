@@ -60,7 +60,7 @@ q_bins = np.linspace(q_min, q_max, q_bins_count) #linear bins
 #------------------------------------------------------------------
 
 #global histogram
-hist = np.zeros((phase_bins_count-1, q_bins_count-1), dtype=np.int32) #array of zeros with histogram shape
+hist = np.zeros((phase_bins_count-1, q_bins_count-1), dtype=np.int32) #array of zeros with histogram shape, integers
 
 for file in files:
     print(file)

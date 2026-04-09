@@ -24,11 +24,11 @@ _________|/_____
 
 #encoder function - encodes data to reduced representation
 encoder:  Linear transform --> ReLU Activation --> Linear transform --> ReLU Activation --> 
-          Linear transform --> ReLU Activation --> Linear transform (Decreasing input size from initial to 16)
+          Linear transform --> ReLU Activation --> Linear transform (Decreasing input size gradually from initial to initial/16)
 
 #decoder function - decodes encoded data to recreate input data
 decoder:  Linear transform --> ReLU Activation --> Linear transform --> ReLU Activation --> 
-          Linear transform --> Sigmoid Activation (Increasing input size from 16 to initial)
+          Linear transform  (Increasing input size gradually from initial/16 to initial)
 
 #forward function - forward pass through autoencoder network
 forward: input --> encoder --> code --> decoder --> output
@@ -44,7 +44,7 @@ creates numpy histogram, will be implemented to create PRPD histogram dataset
 >>create histograms using high-level PD data. Use 10,000 rows per histogram then move to next 10,000
 >>flatten histograms to 1 dimensional representation and convert to Tensor for non-linear autoencoder
 >>enable GPU processing to decrease training time
->>apply min-max normalisation to avoid phase-magnitude skew, prepare autoencoder for future normalised ranges
+>>apply signed min-max (-1, 1) normalisation to avoid phase-magnitude skew, prepare autoencoder for future normalised ranges
 >>create data loader to batch training
 -------------------------------
 #autoencoder training
@@ -66,7 +66,7 @@ optimisation steps:
 ------------------------------------
 #data testing
 >>create histogram set for test data
->>convert set to tensor, min-max normalise
+>>convert set to tensor, signed min-max normalise
 
 #data reconstruction comparisons
 Compare original input data to autoencoder reconstruction graphically to determine effectiveness of network's relvant feature preservation
@@ -77,6 +77,8 @@ For both training data (complete recreation) and test data (unknown recreation):
 
 >>create dataset for histogram representation using input data first element (first sample)
 >>create dataset for histogram representation using reconstruction data first element (first sample)
+
+>>filter out histogram entries that do not meet average error threshold, keep only histograms that have analogous activity
 
 >>create plots for original and reconstructed:
 plt.subplot(1,2,1) #plot grid layout: 1 row, 2 graphs, 1st graph
