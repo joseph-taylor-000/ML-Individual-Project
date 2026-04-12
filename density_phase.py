@@ -1,9 +1,21 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import glob as glob
+import numpy as np
+
 
 #data initialisation
 directory_val = 3 
+
+#global phase density
+density_phase_master = pd.DataFrame({"counts" : np.zeros((360)),  
+                                     "q_pC_total" : np.zeros((360)),
+                                     "q_pC_total_pos" : np.zeros((360)),
+                                     "q_pC_total_neg" : np.zeros((360)),
+                                     "counts_pos" : np.zeros((360)),
+                                     "counts_neg" : np.zeros((360))},
+                                     index = range(360))
+print(density_phase_master)
 
 #directory selection
 if directory_val == 1:
@@ -14,7 +26,7 @@ elif directory_val == 3:
     directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\255 to 256 h\*" #255 to 256hr
 
 files = glob.glob(directory)
-files = files[:10]
+#files = files[:10]
 
 #figure set-up
 fig1, ax1 = plt.subplots()
@@ -40,9 +52,9 @@ for file in files:
         df.groupby("phase_deg_rounded") 
             .agg( #aggregate functions
                 counts = ("q_pC", "size"), ##PD counts at phase 
-                q_pC_mean=("q_pC", lambda x: x.mean()), #mean magnitude of PD counts
-                q_pC_mean_pos = ("q_pC", lambda x: x[x > 0].mean()), #positive mean - mean x where x > 0
-                q_pC_mean_neg = ("q_pC", lambda x: (x[x < 0].mean())), #negative mean - mean x where x < 0
+                q_pC_total=("q_pC", lambda x: x.sum()), #sum magnitude of PD counts
+                q_pC_total_pos = ("q_pC", lambda x: x[x > 0].sum()), #positive sum - sum x where x > 0
+                q_pC_total_neg = ("q_pC", lambda x: (x[x < 0].sum())), #negative sum - sum x where x < 0
                 counts_pos = ("q_pC", lambda x: (x > 0).sum()), #positve values count - sum bool where x > 0
                 counts_neg = ("q_pC", lambda x: (x < 0).sum()) #negative values count - sum bool where x < 0
             )
@@ -50,62 +62,75 @@ for file in files:
     )
 
     density_phase_df = density_phase.reset_index() #separate phase from index
+    
+    density_phase_master["counts"] += density_phase_df["counts"].fillna(0) #ugly solution - fix file alignment
+    density_phase_master["q_pC_total"] += density_phase_df["q_pC_total"].fillna(0)
+    density_phase_master["q_pC_total_pos"] += density_phase_df["q_pC_total_pos"].fillna(0)
+    density_phase_master["q_pC_total_neg"] += density_phase_df["q_pC_total_neg"].fillna(0)
+    density_phase_master["counts_pos"] += density_phase_df["counts_pos"].fillna(0)
+    density_phase_master["counts_neg"] += density_phase_df["counts_neg"].fillna(0)
 
-    print(density_phase_df)
+    print(density_phase_master)
     #density_phase_df.to_csv('density_phase_df.txt', index=False)
 
-    #plot 1
-    ax1.scatter(
-        density_phase_df["phase_deg_rounded"],
-        density_phase_df["counts"],
+density_phase_master["q_pC_mean"] = density_phase_master["q_pC_total"] / density_phase_master["counts"]
+density_phase_master["q_pC_mean_pos"] = density_phase_master["q_pC_total_pos"] / density_phase_master["counts_pos"]
+density_phase_master["q_pC_mean_neg"] = density_phase_master["q_pC_total_neg"] / density_phase_master["counts_neg"]
+
+print(density_phase_master)
+
+#plot 1
+ax1.scatter(
+    density_phase_master.index,
+    density_phase_master["counts"],
+    c="blue",
+    s=10,
+    alpha=0.6
+)
+
+ax2.scatter(
+    density_phase_master.index,
+    density_phase_master["q_pC_mean"],
+    marker = 'x',
+    c='red',
+    s=10,
+    alpha=0.6
+)
+
+#plot 2
+ax3.scatter(
+        density_phase_master.index,
+        density_phase_master["counts_pos"],
         c="blue",
         s=10,
         alpha=0.6
     )
     
-    ax2.scatter(
-        density_phase_df["phase_deg_rounded"],
-        density_phase_df["q_pC_mean"],
+ax4.scatter(
+        density_phase_master.index,
+        density_phase_master["q_pC_mean_pos"],
         marker = 'x',
         c='red',
         s=10,
         alpha=0.6
     )
-
-    #plot 2
-    ax3.scatter(
-            density_phase_df["phase_deg_rounded"],
-            density_phase_df["counts_pos"],
-            c="blue",
-            s=10,
-            alpha=0.6
-        )
-        
-    ax4.scatter(
-            density_phase_df["phase_deg_rounded"],
-            density_phase_df["q_pC_mean_pos"],
-            marker = 'x',
-            c='red',
-            s=10,
-            alpha=0.6
-        )
-    #plot 3
-    ax5.scatter(
-            density_phase_df["phase_deg_rounded"],
-            density_phase_df["counts_neg"],
-            c="blue",
-            s=10,
-            alpha=0.6
-        )
-        
-    ax6.scatter(
-            density_phase_df["phase_deg_rounded"],
-            density_phase_df["q_pC_mean_neg"],
-            marker = 'x',
-            c='red',
-            s=10,
-            alpha=0.6
-        )
+#plot 3
+ax5.scatter(
+        density_phase_master.index,
+        density_phase_master["counts_neg"],
+        c="blue",
+        s=10,
+        alpha=0.6
+    )
+    
+ax6.scatter(
+        density_phase_master.index,
+        density_phase_master["q_pC_mean_neg"],
+        marker = 'x',
+        c='red',
+        s=10,
+        alpha=0.6
+    )
 
 #plot 1
 ax1.set_title("Phase-Discharge Density: All Events")
