@@ -7,6 +7,8 @@ numpy: math library for python.
 #data initialisation
 * read files from directory:
 * sort files
+* determine global min/max delta t values for all files
+
 for each file:
 * drop NaN rows
 * optional filter

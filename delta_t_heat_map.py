@@ -15,6 +15,24 @@ files.sort(
         .replace('.csv', ''))
 ) 
 
+#find min/max dt
+max_charges = []
+min_charges =[]
+
+for file in files:
+    print(file)
+    df = pd.read_csv(file, usecols=["d_time_s"])
+    #df = df[(df["q_pC"] <= 1) & (df["q_pC"] >= -1)] #low level filter
+
+    df.dropna(inplace=True)
+
+    max_charges.append(df["d_time_s"].max())
+    min_charges.append(df["d_time_s"].min())
+
+dt_min = min(min_charges)
+dt_max = max(max_charges)
+
+
 fig, ax = plt.subplots()
 
 for file in files:
@@ -31,7 +49,7 @@ for file in files:
         df["phase_deg"],
         df["q_pC"],
         c=df["d_time_s"],
-        norm=LogNorm(vmin=df["d_time_s"].min(), vmax=df["d_time_s"].max()),
+        norm=LogNorm(vmin=dt_min, vmax=dt_max),
         cmap="plasma",
         marker = '.',
         s=10,
