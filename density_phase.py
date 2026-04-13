@@ -53,8 +53,8 @@ for file in files:
             .agg( #aggregate functions
                 counts = ("q_pC", "size"), ##PD counts at phase 
                 q_pC_sq_total=("q_pC", lambda x: (x**2).sum()), #sum of PD counts squared (for RMS)
-                q_pC_sq_total_pos = ("q_pC", lambda x: ((x[x > 0])**2).sum()), #positive sum - sum x where x > 0
-                q_pC_sq_total_neg = ("q_pC", lambda x: ((x[x < 0])**2).sum()), #negative sum - sum x where x < 0
+                q_pC_sq_total_pos = ("q_pC", lambda x: ((x[x > 0])**2).sum()), #positive sum of squares - sum x where x > 0
+                q_pC_sq_total_neg = ("q_pC", lambda x: ((x[x < 0])**2).sum()), #negative sum of squares- sum x where x < 0
                 counts_pos = ("q_pC", lambda x: (x > 0).sum()), #positve values count - sum bool where x > 0
                 counts_neg = ("q_pC", lambda x: (x < 0).sum()) #negative values count - sum bool where x < 0
             )
@@ -73,9 +73,10 @@ for file in files:
     print(density_phase_master)
     #density_phase_df.to_csv('density_phase_df.txt', index=False)
 
-density_phase_master["q_pC_rms"] = np.sqrt(density_phase_master["q_pC_sq_total"]/density_phase_master["counts"])
-density_phase_master["q_pC_rms_pos"] = np.sqrt(density_phase_master["q_pC_sq_total_pos"]/density_phase_master["counts_pos"])
-density_phase_master["q_pC_rms_neg"] = -(np.sqrt(density_phase_master["q_pC_sq_total_neg"]/density_phase_master["counts_neg"]))
+#calculate rms values only when there are PD event counts
+density_phase_master["q_pC_rms"] = np.sqrt(density_phase_master["q_pC_sq_total"]/density_phase_master["counts"].where(density_phase_master["counts"] > 0))
+density_phase_master["q_pC_rms_pos"] = np.sqrt(density_phase_master["q_pC_sq_total_pos"]/density_phase_master["counts_pos"].where(density_phase_master["counts_pos"] > 0))
+density_phase_master["q_pC_rms_neg"] = -(np.sqrt(density_phase_master["q_pC_sq_total_neg"]/density_phase_master["counts_neg"].where(density_phase_master["counts_neg"] > 0)))
 
 print(density_phase_master)
 
