@@ -9,8 +9,28 @@ import glob
 
 #========dataset initialisation=======
 
-#directory = input("Enter dataset directory: ")
-directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\0 to 1h\*"
+directory_val = 3 
+domain = "time"
+
+if domain == "time":
+    parameter = "time_s"
+    x_axis = "Time"
+    unit = "(seconds)"
+elif domain == "phase":
+    parameter = "phase_deg"
+    x_axis = "Phase"
+    unit = "(deg)"
+
+
+
+#directory selection
+if directory_val == 1:
+    directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\0 to 1h\*" #0-1hr
+elif directory_val == 2:
+    directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\252 to 253 h\*" #252 to 253hr
+elif directory_val == 3:
+    directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\255 to 256 h\*" #255 to 256hr
+
 files = glob.glob(directory)
 print("\nNumber of files found:", len(files))
 
@@ -27,7 +47,7 @@ for i in range (len(files)):
     print(files[i] + "\n")
     
 #file selection
-files = files[:2]
+#files = files[:2]
 
 #=======elbow method========
 
@@ -36,7 +56,7 @@ elbow_files = files[:1]
 data_list = []
 
 for file in elbow_files:
-    df = pd.read_csv(file, usecols=["q_pC", "phase_deg"]) 
+    df = pd.read_csv(file, usecols=["q_pC", parameter]) 
     df.dropna(inplace=True)
     data_list.append(df)
 
@@ -46,19 +66,19 @@ data = pd.concat(data_list).values
 scaler = StandardScaler()
 data = scaler.fit_transform(data)
 
-print('Number of samples: %d' % (data.shape[0]))
-print('Number of features: %d' % (data.shape[1]))
+print(f'Number of samples: {(data.shape[0])}')
+print(f'Number of features: {(data.shape[1])}')
 
 #elbow set-up
 loss = []
 gradient = []
 second_diff = []
-K_range = range(1,3)
+K_range = range(1,10)
 
 #elbow method
 for k in K_range:
     kmeans = KMeans(n_clusters=k, n_init=10)
-    kmeans.fit(data)
+    kmeans.fit(data) #calculate global mean, std using file accumulation
     loss.append(kmeans.inertia_) 
     #interia = sum of squared distances from each point to its cluster center
 
@@ -68,16 +88,17 @@ loss = np.array(loss)
 gradient = np.gradient(loss)
 second_diff = np.gradient(gradient)
 
-K_ideal = np.argmax(second_diff) + 2
+K_ideal = np.argmax(second_diff) + 2 #k_ideal corresponds to index of greatest second diff + 2
 #K_ideal = 3; #hardset value
 
-print('\n ideal K value: %2d' % K_ideal)
+print(f'\n ideal K value: {K_ideal}')
 
 #plot
-fig = plt.figure()
-ax = fig.add_subplot(111)
+fig, ax = plt.subplots()
+
 plt.xlabel('K')
 plt.ylabel('Loss (distortion score)')
+plt.title('Elbow Method')
 ax.set_xticks(K_range)
 plt.plot(K_range, loss)
 plt.show()
@@ -91,42 +112,42 @@ BATCH_SIZE = 10_000
 kmeans = MiniBatchKMeans(
     n_clusters=K_ideal,
     batch_size=BATCH_SIZE,
-    random_state=42
+    random_state=42 #The answer to life, the universe and everything
 )
 
 #scaling
 for file in files:
-    df = pd.read_csv(file, usecols=["q_pC", "phase_deg"])
+    df = pd.read_csv(file, usecols=["q_pC", parameter])
     df.dropna(inplace=True)
-    scaler.partial_fit(df)
+    scaler.partial_fit(df) #global mean, standard deviation
 
 #kmeans fit
 for file in files:
-    df = pd.read_csv(file, usecols=["q_pC", "phase_deg"])
+    df = pd.read_csv(file, usecols=["q_pC", parameter])
     df.dropna(inplace=True)
-    X = scaler.transform(df)
-    kmeans.partial_fit(X)
+    X = scaler.transform(df) #transform data using scaler global values
+    kmeans.partial_fit(X) #update predicted centroid positions
 
 #cluster assignment and plot
 plt.figure(figsize=(12, 5))
 
 for file in files:
-    df = pd.read_csv(file, usecols=["q_pC", "phase_deg"])
+    df = pd.read_csv(file, usecols=["q_pC", parameter])
     df.dropna(inplace=True)
 
-    X = scaler.transform(df[["q_pC", "phase_deg"]])
-    df["cluster"] = kmeans.predict(X)
+    X = scaler.transform(df[["q_pC", parameter]])
+    df["cluster"] = kmeans.predict(X) #assign cluster based on proximity
 
     #add file to scatter
     scatter = plt.scatter(
-    df["phase_deg"],      
+    df[parameter],      
     df["q_pC"],       
     c=df["cluster"],   
     cmap="tab10",            
     s=1,
     alpha=1,   
     rasterized = True,
-    marker = ','                                    
+    marker = '.'                                    
 )
 
 
@@ -145,9 +166,9 @@ for i in range(K_ideal):
     handles.append(patch)
 
 plt.legend(handles=handles, title="Clusters", loc="upper right")
-plt.xlabel("Time (s)")
+plt.xlabel(f"{x_axis} {unit}")
 plt.ylabel("Partial Discharge Magnitude (pC)")
-plt.title("K-means Clustering: PD Magnitude vs Time")
+plt.title(f"K-means Clustering: PD Magnitude vs {x_axis}")
 plt.tight_layout()
 #plt.savefig("kmeans_1hr.png", dpi = 300)
 plt.show()

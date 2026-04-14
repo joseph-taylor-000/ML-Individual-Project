@@ -90,7 +90,8 @@ plt.title('K-means Clustering: Phase Resolved Partial Discharge')
 #predict which cluster each data point will belong to (data[a] is one data point (all columns on row a))
 for i in range(0, K_ideal):
     current_centroid_assignment = np.where(predictions == i)[0]
-    ax.scatter(data[current_centroid_assignment, 0], data[current_centroid_assignment, 1])
+    ax.scatter(data[current_centroid_assignment, 0], 
+               data[current_centroid_assignment, 1])
     plt.plot(centroids[i, 0], centroids[i, 1], 'k*', markersize=12)
 
 plt.show()
