@@ -15,6 +15,8 @@ sklearn: contains clustering (k-means) algorithm, scaling algorithms, example da
 time: allows for time keeping in python. Used to time execution of this program.
 
 #data initialisation
+* select directory
+* select domain
 * loads data from folder
 * sorts data numerically
 * splits data into training sample and test data
@@ -30,7 +32,7 @@ time: allows for time keeping in python. Used to time execution of this program.
 * HDBSCAN performed on sample
 
 #HDBSCAN
-The HDBSCAN algorithm is a density based clustering algorithm, based upon the preceding 'DBSCAN' algorithm. 
+The HDBSCAN algorithm is a density-based clustering algorithm, based upon the preceding 'DBSCAN' algorithm. 
 
 DBSCAN:
 * Observes each data point and the data points which surround it within a user-defined radius (epsilon).  
@@ -53,9 +55,13 @@ Important Parameters:
 * prediction_data >> this bool allows for the use of prediction data from previous trials. It is needed to train the model before use.
 
 Important Methods:
+.fit(data) >> calculates mean and standard deviation for data 
+.fit_transform(data) >> calculates mean and standard deviation for data and then scales data accordingly
 .fit_predict() >> Runs HDBSCAN on data and assigns group for each column.
-.fit() >> fits HDBSCAN using specified data
-.approximate_predict() >> uses pretrained algorithm on data to approximate clusters.
+
+.partial_fit(data) >> calculates mean and standard deviation for subsection of data, accumulates for whole data
+.transform(data) >> uses precalculated scaler parameters to standardize data
+.approximate_predict(model, data) >> uses pretrained algorithm model on data to approximate clusters.
 
 Using approximate_predict, it is possible to integrate multiple files into the HDBSCAN algorithm and plot the results on the same axis.
 This code version uses a for loop to perform approximate cluster predictions for each file within the test data.
@@ -72,4 +78,15 @@ rasterization >> rasterized = True, #prevents vector shapes, uses pixels as poin
 marker-type >> marker = ',' #smallest marker type, better efficiency
 
 Two for loops are used to assertain the colours used for each cluster and assign them to the graphs legend.
+
+Cluster information is separated into multiple files:
+
+for cluster, group in df.groupby("cluster"): #for each unique cluster, group is the corresponding subsection of dataframe
+        file_path = os.path.join(output_dir, f"HDBSCAN_cluster_{cluster}.txt") #separate files for each cluster
+        group.to_csv(
+            file_path,
+            mode="a", #append
+            header=not os.path.exists(file_path), #only write header if first file
+            index=False
+        )
 
