@@ -106,11 +106,12 @@ for file in test_data:
     df = pd.read_csv(file, usecols=[parameter, "q_pC"])
     #df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
     df = df.drop(index=indices[i]) #remove test data samples before sampling
+    i += 1
 
     df = df.sample(100000)
     df.dropna(inplace=True)
     scaler.partial_fit(df)
-    i += 1
+    
 
 print("Calculation Complete\n")
 
@@ -118,9 +119,13 @@ fig, ax = plt.subplots()
 
 print("HDBSCAN...\n")
 
+i=0
 for file in test_data:
     df = pd.read_csv(file, usecols=["q_pC", "time_s", "phase_deg", "d_time_s"])
     #df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
+    df = df.drop(index=indices[i]) #remove test data samples before sampling
+    i += 1
+
     df = df.sample(100000) #if sample size smaller than training samples, data may be added to clusters non-sequentially, which breaks colour index later
     df.dropna(inplace=True)
     X = scaler.transform(df[[parameter, "q_pC"]]) #scaling
