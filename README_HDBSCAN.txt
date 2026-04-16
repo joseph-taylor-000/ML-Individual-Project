@@ -15,9 +15,11 @@ sklearn: contains clustering (k-means) algorithm, scaling algorithms, example da
 time: allows for time keeping in python. Used to time execution of this program.
 
 #data initialisation
-* select directory
 * select domain
-* loads data from folder
+* select input directory and output directory
+* check output directory exists
+
+* loads data from input directory folder
 * sorts data numerically
 * splits data into training sample and test data
 
@@ -25,6 +27,7 @@ time: allows for time keeping in python. Used to time execution of this program.
 * for each file:
 	>> creates dataframe
 	>> chooses sample from data
+    >> records sample indices for later separation
 	>> removes NaN rows
 	>> applies scaling to data
 	>> adds to data list
@@ -55,16 +58,19 @@ Important Parameters:
 * prediction_data >> this bool allows for the use of prediction data from previous trials. It is needed to train the model before use.
 
 Important Methods:
+scaler:
 .fit(data) >> calculates mean and standard deviation for data 
 .fit_transform(data) >> calculates mean and standard deviation for data and then scales data accordingly
-.fit_predict() >> Runs HDBSCAN on data and assigns group for each column.
-
 .partial_fit(data) >> calculates mean and standard deviation for subsection of data, accumulates for whole data
 .transform(data) >> uses precalculated scaler parameters to standardize data
+
+HDBSCAN:
 .approximate_predict(model, data) >> uses pretrained algorithm model on data to approximate clusters.
+.fit_predict() >> Runs HDBSCAN on data and assigns group for each column.
 
 Using approximate_predict, it is possible to integrate multiple files into the HDBSCAN algorithm and plot the results on the same axis.
-This code version uses a for loop to perform approximate cluster predictions for each file within the test data; ensuring that test data samples are not shared with training data.
+This code version uses a for loop to perform approximate cluster predictions for each file within the test data; 
+ensuring that test data samples are not shared with training data using saved indices.
 
 #scatter plot 
 Parameters:
