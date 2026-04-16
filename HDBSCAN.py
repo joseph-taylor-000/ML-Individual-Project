@@ -9,14 +9,14 @@ import time
 import matplotlib.colors as mcolors
 import matplotlib.patches as mpatches
 
-start_time = time.time()
+time_marker = time.time()
 
 #parameters
 MIN_CLUSTER_SIZE = 100   
 
 #========dataset initialisation=======
 directory_val = 3 
-domain = "phase"
+domain = "time"
 
 if domain == "time":
     parameter = "time_s"
@@ -56,25 +56,32 @@ for i in range (len(files)):
     print(files[i] + "\n")
     
 #file selection
-sample = files[:10]
+sample = files
 test_data = files[10:15]
 
 #HDBSCAN training using sample
 scaler = StandardScaler()
 data_list=[] 
+indices =[]
 
 print("Scaling sample data...\n")
 
 for file in sample: 
     df = pd.read_csv(file, usecols=["q_pC", parameter])
     #df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
-    df = df.sample(100000)
+    df = df.sample(10000)
+    indices.append(df.index) #keep sample indices
     df.dropna(inplace=True)
-    scaler.partial_fit(df)
+    scaler.partial_fit(df) #partial mean, sd
     data_list.append(df)
 
-sample_data = scaler.transform(pd.concat(data_list).values)
+data_list = pd.concat(data_list) #concat to single dataframe
+data_list = data_list.values #convert to numpy array for transform
+sample_data = scaler.transform(data_list) #transform using scaler
+
 print("Files scaled...\n")
+print(f"Scaling Completion Time: {time.time()-time_marker} seconds\n")
+time_marker = time.time()
 
 clusterer = hdbscan.HDBSCAN(
     min_cluster_size=MIN_CLUSTER_SIZE,
@@ -88,14 +95,22 @@ print("Training...\n")
 clusterer.fit(sample_data)
 print("Training Complete\n")
 
+print(f"Training Completion Time: {time.time()-time_marker} seconds\n")
+time_marker = time.time()
+
 #HDBSCAN clustering and plotting
 print("Calculating Scaler Parameters...\n")
+
+i=0
 for file in test_data:
-    df = pd.read_csv(file, usecols=["q_pC", parameter])
+    df = pd.read_csv(file, usecols=[parameter, "q_pC"])
     #df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
+    df = df.drop(index=indices[i]) #remove test data samples before sampling
+
     df = df.sample(100000)
     df.dropna(inplace=True)
     scaler.partial_fit(df)
+    i += 1
 
 print("Calculation Complete\n")
 
@@ -108,7 +123,7 @@ for file in test_data:
     #df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
     df = df.sample(100000) #if sample size smaller than training samples, data may be added to clusters non-sequentially, which breaks colour index later
     df.dropna(inplace=True)
-    X = scaler.transform(df[["q_pC", parameter]]) #scaling
+    X = scaler.transform(df[[parameter, "q_pC"]]) #scaling
     cluster,_ = hdbscan.prediction.approximate_predict(clusterer, X) #returns cluster and strengths - strengths not used
 
     df["cluster"] = cluster
@@ -148,7 +163,7 @@ for file in test_data:
         )
 
 print("HDBSCAN Complete\n")
-print(f"Program Completion Time: {time.time()-start_time} seconds")
+print(f"HDBSCAN Completion Time: {time.time()-time_marker} seconds")
 print(df)
 
 

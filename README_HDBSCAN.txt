@@ -64,7 +64,7 @@ Important Methods:
 .approximate_predict(model, data) >> uses pretrained algorithm model on data to approximate clusters.
 
 Using approximate_predict, it is possible to integrate multiple files into the HDBSCAN algorithm and plot the results on the same axis.
-This code version uses a for loop to perform approximate cluster predictions for each file within the test data.
+This code version uses a for loop to perform approximate cluster predictions for each file within the test data; ensuring that test data samples are not shared with training data.
 
 #scatter plot 
 Parameters:
