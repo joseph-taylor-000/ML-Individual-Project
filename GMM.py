@@ -8,7 +8,17 @@ import glob
 
 #data initialisation
 file_mode = "all" #single / all
-domain = "phase" 
+domain = "phase"
+
+#domain selection
+if domain == "time":
+    parameter = "time_s"
+    x_axis = "Time"
+    unit = "(seconds)"
+elif domain == "phase":
+    parameter = "phase_deg"
+    x_axis = "Phase"
+    unit = "(deg)"
 
 if file_mode == "all":
     #directory selection
@@ -23,7 +33,7 @@ if file_mode == "all":
 
 
 #GMM clusterer
-NUM_CLUSTERS = 4
+NUM_CLUSTERS = 3
 gm = GaussianMixture(n_components= NUM_CLUSTERS, 
                     covariance_type = 'full',
                     random_state= 0,
@@ -42,7 +52,7 @@ colours = []
 if file_mode == "single":
     directory = r"M:\OneDrive - The University of Manchester\ML_Individual_Project\clusters_255_anomaly\HDBSCAN_cluster_-1.txt"
 
-    df = pd.read_csv(directory, usecols=["phase_deg", "q_pC"])
+    df = pd.read_csv(directory, usecols=[parameter, "q_pC"])
     df.dropna(inplace=True)
     #df = df[(df["q_pC"] <= 5) & (df["q_pC"] >= -5)] #optional filter 
 
@@ -55,7 +65,7 @@ if file_mode == "single":
 
     #plot
     scatter = plt.scatter(
-        df["phase_deg"],
+        df[parameter],
         df["q_pC"],
         c=clusters,
         cmap="tab10",
@@ -71,18 +81,10 @@ if file_mode == "single":
         patch = mpatches.Patch(color=colours[i], label=f"Cluster {i}")
         handles.append(patch)
 
-    plt.legend(handles=handles, title="Clusters", loc="upper right")
-
-    plt.xlabel("Phase (deg)")
-    plt.ylabel("Partial Discharge Magnitude (pC)")
-    plt.title("Gaussian Mixed Model Clustering: PD Magnitude vs Phase")
-    #plt.colorbar(scatter, label="Cluster")
-    plt.tight_layout()
-    plt.show()
 
 if file_mode == "all":
     files = glob.glob(directory)
-    files = files[:10]
+    files = files[:1]
 
     files.sort(
     key=lambda f: 
@@ -91,20 +93,20 @@ if file_mode == "all":
     ) 
 
     for file in files:
-        df = pd.read_csv(file, usecols=["q_pC", "phase_deg"])
+        df = pd.read_csv(file, usecols=["q_pC", parameter])
         #df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
         df.dropna(inplace=True)
         scaler.partial_fit(df) #partial mean, sd
     
     for file in files:
-        df = pd.read_csv(file, usecols=["q_pC", "phase_deg"])
+        df = pd.read_csv(file, usecols=["q_pC", parameter])
         df.dropna(inplace=True)
         numpy_scaled = scaler.transform(df)
         clusters = gm.fit_predict(numpy_scaled)
 
         #plot
         scatter = plt.scatter(
-            df["phase_deg"],
+            df[parameter],
             df["q_pC"],
             c=clusters,
             cmap="tab10",
@@ -123,11 +125,11 @@ if file_mode == "all":
         patch = mpatches.Patch(color=colours[i], label=f"Cluster {i}")
         handles.append(patch)
 
-    plt.legend(handles=handles, title="Clusters", loc="upper right")
+plt.legend(handles=handles, title="Clusters", loc="upper right")
 
-    plt.xlabel("Phase (deg)")
-    plt.ylabel("Partial Discharge Magnitude (pC)")
-    plt.title("Gaussian Mixed Model Clustering: PD Magnitude vs Phase")
-    #plt.colorbar(scatter, label="Cluster")
-    plt.tight_layout()
-    plt.show()
+plt.xlabel(f"{x_axis} {unit}")
+plt.ylabel("Partial Discharge Magnitude (pC)")
+plt.title(f"Gaussian Mixed Model Clustering: PD Magnitude vs {x_axis}")
+#plt.colorbar(scatter, label="Cluster")
+plt.tight_layout()
+plt.show()

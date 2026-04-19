@@ -23,6 +23,7 @@ The final clusters are decided based upon each point's membership liklihood.
 
 #data initialisation
 * select file load mode (single / all)
+* select domain (phase / time)
 * select file directory
 * define GMM clusterer
 * init scaler
