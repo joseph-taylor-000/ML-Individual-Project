@@ -34,16 +34,18 @@ The final clusters are decided based upon each point's membership liklihood.
 * drops NaN rows
 * scales data and stores in numpy array
 * lables are assigned by fitting GMM to data
-
-#plot
-* phase vs. charge magnitude plot
-* point colours based on labels
-* legend created using patch geometry with label and colour assignment corresponding with scatter plot
+* plot data on scatter plot
 
 #ALL FILES MODE
 * load files in dataframes iteratively
 for each file:
 	* on first pass, fit scaler object to data set using partial fit
-	* on second pass, transform data using optimized scaler and determine clusters using GMM clustering
+	* on second pass, transform data using optimized scaler and determine train cluster distribution parameters
+	* on third pass, transform data using otimized scaler and determine GMM cluster labels
 	* plot data on scatter plot
+
+#plot
+* phase vs. charge magnitude / time vs. charge magnitude plot 
+* point colours based on labels
+* legend created using patch geometry with label and colour assignment corresponding with scatter plot
 

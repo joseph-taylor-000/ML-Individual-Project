@@ -33,7 +33,7 @@ if file_mode == "all":
 
 
 #GMM clusterer
-NUM_CLUSTERS = 3
+NUM_CLUSTERS = 4
 gm = GaussianMixture(n_components= NUM_CLUSTERS, 
                     covariance_type = 'full',
                     random_state= 0,
@@ -84,7 +84,7 @@ if file_mode == "single":
 
 if file_mode == "all":
     files = glob.glob(directory)
-    files = files[:1]
+    files = files[:10]
 
     files.sort(
     key=lambda f: 
@@ -92,17 +92,26 @@ if file_mode == "all":
         .replace('.csv', ''))
     ) 
 
+    #pass 1 - fit scaler
     for file in files:
         df = pd.read_csv(file, usecols=["q_pC", parameter])
         #df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
         df.dropna(inplace=True)
         scaler.partial_fit(df) #partial mean, sd
     
+    #pass 2 - train GMM model
     for file in files:
         df = pd.read_csv(file, usecols=["q_pC", parameter])
         df.dropna(inplace=True)
         numpy_scaled = scaler.transform(df)
-        clusters = gm.fit_predict(numpy_scaled)
+        gm = gm.fit(numpy_scaled)
+
+    #pass 3 - determine cluster labels
+    for file in files:
+        df = pd.read_csv(file, usecols=["q_pC", parameter])
+        df.dropna(inplace=True)
+        numpy_scaled = scaler.transform(df)
+        clusters = gm.predict(numpy_scaled)
 
         #plot
         scatter = plt.scatter(
