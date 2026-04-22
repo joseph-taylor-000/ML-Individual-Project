@@ -5,15 +5,16 @@ import os
 from river import cluster
 from sklearn.preprocessing import StandardScaler
 
-#========dataset initialisation=======
+#data initialisation
+directory_val = 3 
 
-#directory = input("Enter dataset directory: ")
-directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\255 to 256 h\*"
-output_dir = r"M:\OneDrive - The University of Manchester\ML_Individual_Project"
-
-os.makedirs(output_dir, exist_ok=True) 
-#safety - prevents error if output_dir already exists, 
-#creates directory if does not exist
+#directory selection
+if directory_val == 1:
+    directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\0 to 1h\*" #0-1hr
+elif directory_val == 2:
+    directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\252 to 253 h\*" #252 to 253hr
+elif directory_val == 3:
+    directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\255 to 256 h\*" #255 to 256hr
 
 files = glob.glob(directory)
 print("\nNumber of files found:", len(files))
@@ -29,50 +30,82 @@ for i in range (len(files)):
     print(files[i] + "\n")
     
 #file selection
-#files = files[:2]
+files = files[:2]
+
+output_dir = r"M:\OneDrive - The University of Manchester\ML_Individual_Project"
+os.makedirs(output_dir, exist_ok=True) 
+#safety - prevents error if output_dir already exists, 
+#creates directory if does not exist
 
 #DenStream
 denstream = cluster.DenStream(decaying_factor=0.01,
                               beta=0.5,
                               mu=2.0001,
-                              epsilon=2.3,
-                              n_samples_init=1000)
+                              epsilon=0.9,
+                              n_samples_init=10000)
 
-# Stream and plot each file
+
 fig, ax = plt.subplots()
 scaler = StandardScaler()
 
+#---------------------------------------------------
+#training scaler
 for file in files:
-    cluster_ids = []
+    df = pd.read_csv(file, usecols=["phase_deg", "q_pC"])
+    df.dropna(inplace=True)
+    #df = df.sample(200000) #subset of data
+    #df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
+    scaler = scaler.partial_fit(df)
+
+#training DenStream
+for file in files:
+    print(f"Streaming file: {file} for training")
+    df = pd.read_csv(file, usecols=["phase_deg", "q_pC"])
+    df.dropna(inplace=True)
+    #df = df.sample(200000) #subset of data
+    #df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
+    
+    #scaling
+    df_scaled = scaler.transform(df) 
+
+    print("Training...")
+    for row in df_scaled:
+        #row to dictionary conversion for DenStream input
+        for phase, charge in enumerate(row): 
+            point = {phase: float(charge)}
+
+        denstream.learn_one(point) #train algorithm
+
+#clustering data
+for file in files:
+    clusters= []
 
     print(f"Streaming file: {file}")
     df = pd.read_csv(file, usecols=["phase_deg", "q_pC"])
     df.dropna(inplace=True)
     #df = df.sample(200000) #subset of data
-    df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
+    #df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
     
-    df_scaled = scaler.fit_transform(df)
+    #scaling
+    df_scaled = scaler.transform(df) 
 
-    df["phase_deg_scaled"] = df_scaled[:,1]
-    df["q_pC_scaled"] = df_scaled[:,0]
+    print("Clustering...")
+    for row in df_scaled:
+        #row to dictionary conversion for DenStream input
+        for phase, charge in enumerate(row): 
+            point = {phase: float(charge)}
 
-    df = df.drop(columns=["phase_deg", "q_pC"])
-
-    # Stream each row (as a point) into DenStream
-    print("Learning...")
-    for row in df.itertuples(index=False):
-        point = {i: float(v) for i, v in enumerate(row)} #generate dictionary
-        denstream.learn_one(point)
-        cluster_id = denstream.predict_one(point)
-        cluster_ids.append(cluster_id)
+        cluster = denstream.predict_one(point) #find appropriate cluster
+        clusters.append(cluster)
         
+    print(clusters)
 
     print("Saving...")
-    df["cluster_id"] = cluster_ids
+    df["cluster"] = clusters
 
-    for cluster_id, group in df.groupby("cluster_id"):
+    for cluster, group in df.groupby("cluster"):
 
-        file_path = os.path.join(output_dir, f"cluster_{cluster_id}.txt")
+        file_path = os.path.join(output_dir, f"cluster_{cluster}.txt")
 
         group.to_csv(
             file_path,
@@ -83,9 +116,9 @@ for file in files:
 
     print("Plotting...")
     scatter = ax.scatter(
-    df["phase_deg_scaled"],
-    df["q_pC_scaled"],
-    c=df["cluster_id"],
+    df["phase_deg"],
+    df["q_pC"],
+    c=df["cluster"],
     cmap="tab10",
     s=1,
     alpha=1,
@@ -103,4 +136,3 @@ fig.colorbar(scatter, ax=ax, label="Cluster")
 plt.tight_layout()
 plt.show()
 
-#plot no good, sample removes relevent data from df (abnormal region), groups have distinct phase cutoffs

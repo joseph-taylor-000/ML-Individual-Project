@@ -1,3 +1,5 @@
+Note: DenStream was posed as an alternative to the streaming HDBSCAN used in the final report however it has been omitted from the final report due to poor results / redundancy and excessive load times.
+
 Version: Python 3.12.0
 
 Required libraries:
@@ -33,7 +35,7 @@ decaying_factor: controls the impact of historical data on current cluster.
 beta / mu: controls the distance threshold from micro cluster centres at which points are considered noise (beta*mu > 1).
 >>beta = 0.5, mu = 2.001  have been chosen to minimise noise tolerance to isolate abnormal regions as noise and extract them for further investigation using HDBSCAN.
 epsilon: defines the neighbourhood radius for density clustering as in DBSCAN.
->>set at 2.3 to produce several clusters but preventing overfitting at lower epsilon values.
+>>set at 0.9 to produce several clusters but preventing overfitting at lower epsilon values.
 n_samples_init: defines the number of data points used to form the initial microclusters withing the data before streaming begins.
 >>1000 is the default value and is usually sufficient (even for large datasets) as streaming means the clusters adapt with more data anyway.
 
@@ -42,12 +44,13 @@ For each file in file directory:
 * moves data into dataframe, keeps only phase_deg and q_pC columns to reduce bloat
 * removes NaN rows
 * to extract abnormal regions, filter is applied (df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)])
-* dataframe is scaled using numpy array, scaled data is then moved back into dataframe as df["q_pC_scaled"] and df["phase_deg_scaled"]
-* unscaled data columns removed to reduce bloat
-* dataframe processed iteratively per row using .intertuples(), which treats each row in the dataframe as a tuple.
-* for each row, a dictionary is generated using df["phase_deg_scaled"] as the index and df["q_pC_scaled"] as the value (enumerated from tuple).
+* dataframe is scaled using numpy array, saved into new df_scaled
+* df_scaled processed iteratively per row
+* for each row, a dictionary is generated using phase and q_pC columns from df_scaled.
 * this is so that the .learn_one() and predict_one() methods from the River cluster library can be used to implement the denstream algorithm.
+	pass 1:
 	>> .learn_one(X) updates the model with a new set of features X [1]
+	pass 2:
 	>> .predict_one(X) predicts the cluster value for a new set of features X [1]
 * cluster IDs are then added to dataframe
 * dataframe rows saved to text files based on their cluster value
