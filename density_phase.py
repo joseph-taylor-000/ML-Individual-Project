@@ -5,7 +5,7 @@ import numpy as np
 
 
 #data initialisation
-directory_val = 3 
+directory_val = 6 
 
 #global phase density
 density_phase_master = pd.DataFrame({"counts" : np.zeros((360)),  
@@ -18,12 +18,27 @@ density_phase_master = pd.DataFrame({"counts" : np.zeros((360)),
 print(density_phase_master)
 
 #directory selection
+#Sample 4.4 directories
 if directory_val == 1:
     directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\0 to 1h\*" #0-1hr
 elif directory_val == 2:
     directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\252 to 253 h\*" #252 to 253hr
 elif directory_val == 3:
     directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\255 to 256 h\*" #255 to 256hr
+
+#Sample 4.3 directories
+elif directory_val == 4:
+    directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.3\0 to 1h\*" #0 to 1hr
+elif directory_val == 5:
+    directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.3\95 to 96h (sample opened for inspection at 96 h)\*" #95 to 96hr
+elif directory_val == 6:
+    directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.3\190 to 191h\*" #190 to 191hr
+    
+#noise directories
+elif directory_val == 7:
+    directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\Noise_0 to 120s\*" #0 to 120s
+elif directory_val == 8:
+    directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\Noise_0 to 1000s\*" #0 to 1000s
 
 files = glob.glob(directory)
 #files = files[:10]
