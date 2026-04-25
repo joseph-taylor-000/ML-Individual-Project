@@ -50,8 +50,7 @@ elif directory_val == 7:
 elif directory_val == 8:
     directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\Noise_0 to 1000s\*" #0 to 1000s
 
-
-
+#output directories
 output_dir = r"M:\OneDrive - The University of Manchester\ML_Individual_Project\HDBSCAN_clusters"
 
 if directory_val < 4:
@@ -178,9 +177,6 @@ for file in test_data:
         marker='.'
     )
 
-    
-    
-
     print(f"Saving clusters for part {file.rsplit('part', 1)[1].replace('.csv', '')}...")
 
     for cluster, group in df.groupby("cluster"): #for each unique cluster, group is the corresponding subsection of dataframe
@@ -196,6 +192,7 @@ print("HDBSCAN Complete\n")
 print(f"HDBSCAN Completion Time: {time.time()-time_marker} seconds")
 print(df)
 
+clusters = np.concatenate(clusters)
 handles = []
 for i in np.unique(clusters):
     colour = scatter.cmap(scatter.norm(i))
