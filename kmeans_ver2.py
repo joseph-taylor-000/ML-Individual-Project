@@ -11,7 +11,7 @@ import time
 
 #========dataset initialisation=======
 directory_val = 1
-domain = "time"
+domain = "phase"
 
 if domain == "time":
     parameter = "time_s"
@@ -56,13 +56,14 @@ files.sort(
 ) 
 #files list modified to be in numerical order
 #split at 'part', using section after, remove file type
+#file int for sort key
 
 print("\nFiles found: ")
 for i in range (len(files)):
     print(files[i] + "\n")
     
 #file selection
-files = files[:2]
+#files = files[:2]
 
 #=======elbow method========
 elbow_start_time = time.time()
@@ -137,6 +138,7 @@ kmeans = MiniBatchKMeans(
 for file in files:
     df = pd.read_csv(file, usecols=["q_pC", parameter])
     df.dropna(inplace=True)
+    df = df.sample(100000)
     scaler.partial_fit(df) #global mean, standard deviation
 
 #kmeans fit
@@ -144,6 +146,8 @@ for file in files:
     print(file)
     df = pd.read_csv(file, usecols=["q_pC", parameter])
     df.dropna(inplace=True)
+    df = df.sample(100000)
+
     X = scaler.transform(df) #transform data using scaler global values
     kmeans.partial_fit(X) #update predicted centroid positions
 
