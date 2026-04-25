@@ -10,7 +10,7 @@ import glob
 import time
 
 #========dataset initialisation=======
-directory_val = 1
+directory_val = 6
 domain = "phase"
 
 if domain == "time":
@@ -75,6 +75,7 @@ data_list = []
 for file in elbow_files:
     df = pd.read_csv(file, usecols=["q_pC", parameter]) 
     df.dropna(inplace=True)
+    df = df[(df["q_pC"] >= 0.5) | (df["q_pC"] <= 0.5)]
     data_list.append(df)
 
 data = pd.concat(data_list).values
@@ -138,6 +139,7 @@ kmeans = MiniBatchKMeans(
 for file in files:
     df = pd.read_csv(file, usecols=["q_pC", parameter])
     df.dropna(inplace=True)
+    df = df[(df["q_pC"] >= 0.5) | (df["q_pC"] <= 0.5)]
     df = df.sample(100000)
     scaler.partial_fit(df) #global mean, standard deviation
 
@@ -146,6 +148,7 @@ for file in files:
     print(file)
     df = pd.read_csv(file, usecols=["q_pC", parameter])
     df.dropna(inplace=True)
+    df = df[(df["q_pC"] >= 0.5) | (df["q_pC"] <= 0.5)]
     df = df.sample(100000)
 
     X = scaler.transform(df) #transform data using scaler global values
@@ -158,6 +161,8 @@ for file in files:
     print(file)
     df = pd.read_csv(file, usecols=["q_pC", parameter])
     df.dropna(inplace=True)
+    df = df[(df["q_pC"] >= 0.5) | (df["q_pC"] <= 0.5)]
+    df = df.sample(100000)
 
     X = scaler.transform(df[["q_pC", parameter]])
     df["cluster"] = kmeans.predict(X) #assign cluster based on proximity
@@ -167,7 +172,7 @@ for file in files:
     df[parameter],      
     df["q_pC"],       
     c=(df["cluster"]),
-    norm = mcolors.Normalize(vmin=0,vmax=(K_ideal-1)),  #consistant normalisation 
+    norm = mcolors.Normalize(vmin=0, vmax=(K_ideal-1)),  #consistant normalisation 
     cmap=plt.get_cmap("tab10", K_ideal), #consistant colourmap, only required colours 
     s=1,
     alpha=1,   
