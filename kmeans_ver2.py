@@ -8,9 +8,9 @@ from sklearn.cluster import MiniBatchKMeans
 from sklearn.preprocessing import StandardScaler
 import glob
 import time
-
+import os
 #========dataset initialisation=======
-directory_val = 6
+directory_val = 5
 domain = "phase"
 
 if domain == "time":
@@ -44,6 +44,17 @@ elif directory_val == 7:
     directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\Noise_0 to 120s\*" #0 to 120s
 elif directory_val == 8:
     directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\Noise_0 to 1000s\*" #0 to 1000s
+
+if directory_val < 4:
+    output_dir_img = r"M:\OneDrive - The University of Manchester\ML_Individual_Project\Results Plots\PRPD K-Means\S4.4"
+    file_name = os.path.join(output_dir_img, f"S4.4_{directory.rsplit("4.4\\",1)[1].replace('\*', '')}.png")
+else:
+    output_dir_img = r"M:\OneDrive - The University of Manchester\ML_Individual_Project\Results Plots\PRPD K-Means\S4.3"
+    file_name = os.path.join(output_dir_img, f"S4.3_{directory.rsplit("4.3\\",1)[1].replace('\*', '')}.png")
+
+os.makedirs(output_dir_img, exist_ok=True) 
+#safety - prevents error if output_dir already exists, 
+#creates directory if does not exist
 
 
 files = glob.glob(directory)
@@ -113,14 +124,14 @@ print(f"Elbow Method time: {time.time()-elbow_start_time}")
 print(f'\n ideal K value: {K_ideal}')
 
 #plot
-fig, ax = plt.subplots()
+'''fig, ax = plt.subplots()
 
 plt.xlabel('K')
 plt.ylabel('Loss (distortion score)')
 plt.title('Elbow Method')
 ax.set_xticks(K_range)
 plt.plot(K_range, loss)
-plt.show()
+plt.show()'''
 
 #========FULL KMEANS========
 kmeans_start_time = time.time()
@@ -155,7 +166,7 @@ for file in files:
     kmeans.partial_fit(X) #update predicted centroid positions
 
 #cluster assignment and plot
-plt.figure(figsize=(12, 5))
+fig, ax = plt.subplots()
 
 for file in files:
     print(file)
@@ -168,7 +179,7 @@ for file in files:
     df["cluster"] = kmeans.predict(X) #assign cluster based on proximity
 
     #add file to scatter
-    scatter = plt.scatter(
+    scatter = ax.scatter(
     df[parameter],      
     df["q_pC"],       
     c=(df["cluster"]),
@@ -194,9 +205,10 @@ for i in range(K_ideal):
 plt.legend(handles=handles, title="Clusters", loc="upper right")
 
 
-plt.xlabel(f"{x_axis} {unit}")
-plt.ylabel("Partial Discharge Magnitude (pC)")
-plt.title(f"K-means Clustering: PD Magnitude vs {x_axis}")
+ax.set_xlabel(f"{x_axis} {unit}")
+ax.set_ylabel("Partial Discharge Magnitude (pC)")
+ax.set_title(f"K-means Clustering: PD Magnitude vs {x_axis}")
+plt.savefig(fname = file_name)
 plt.tight_layout()
-#plt.savefig("kmeans_1hr.png", dpi = 300)
+
 plt.show()
