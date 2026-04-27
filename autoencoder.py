@@ -5,27 +5,29 @@ import numpy as np
 import torch 
 import torch.nn as nn 
 import torch.optim as optim
+import time
 
 class Autoencoder(nn.Module):
-    def __init__(self, input_size):
+    def __init__(self, input_size, latent_size):
         super().__init__()
         self.input_size = input_size 
+        self.latent_size = latent_size
         
         self.encoder = nn.Sequential(
             #latent space
-            nn.Linear(self.input_size, int(self.input_size/4)),
+            nn.Linear(self.input_size, int(self.latent_size*4)),
             nn.ReLU(),
-            nn.Linear(int(self.input_size/4), int(self.input_size/8)),
+            nn.Linear(int(self.latent_size*4), int(self.latent_size*2)),
             nn.ReLU(),
-            nn.Linear(int(self.input_size/8), int(self.input_size/16))
+            nn.Linear(int(self.latent_size*2), int(self.latent_size))
         )
 
         self.decoder = nn.Sequential(
-            nn.Linear(int(self.input_size/16), int(self.input_size/8)),
+            nn.Linear(int(self.latent_size), int(self.latent_size*2)),
             nn.ReLU(),
-            nn.Linear(int(self.input_size/8), int(self.input_size/4)),
+            nn.Linear(int(self.latent_size*2), int(self.latent_size*4)),
             nn.ReLU(),
-            nn.Linear(int(self.input_size/4), self.input_size),
+            nn.Linear(int(self.latent_size*4), self.input_size)
         )
 
     def forward(self, x):
@@ -50,8 +52,8 @@ def generate_hist(data, phase_bins, q_bins, q_min, q_max):
 
 #--------------------------------------------------------------------------------------------------------------------------------
 #data initialisation
-directory_val = 3 
-use_noise_data = True
+directory_val = 3
+use_noise_data = False
 
 #directory selection
 #Sample 4.4 directories
@@ -83,7 +85,7 @@ else:
 
 #file loading
 files = glob.glob(directory)
-files = files[:10]
+#files = files[:1]
 files.sort(
     key=lambda f: 
     int(f.rsplit('part', 1)[1]
@@ -103,7 +105,7 @@ for file in files:
     #df = df[(df["q_pC"] <= 1) & (df["q_pC"] >= -1)] #low level filter
 
     #df = df[(df["q_pC"] >= 1) | (df["q_pC"] <= -1)] #high level filter
-    df = df[(df["q_pC"] <= 20) & (df["q_pC"] >= -20)] #remove significant anomalies to improve bin accuracy while preserving input size, according to full data histograms
+    #df = df[(df["q_pC"] <= 20) & (df["q_pC"] >= -20)] #remove significant anomalies to improve bin accuracy while preserving input size, according to full data histograms
 
     df.dropna(inplace=True)
     min_charges.append(df["q_pC"].min())
@@ -113,8 +115,8 @@ q_min = min(min_charges)
 q_max = max(max_charges)    
 
 #bin edges - alter when optimal bins are found
-phase_bins_count = 36 #361
-q_bins_count = 20 #200
+phase_bins_count = 72 #361
+q_bins_count = 40 #200
 
 phase_bins = np.linspace(0, 360, phase_bins_count)  
 q_bins = np.linspace(min(min_charges), max(max_charges), q_bins_count) #linear bins
@@ -127,15 +129,16 @@ for file in files:
     df = pd.read_csv(file, usecols=["phase_deg", "q_pC"])
 
     #filters - high level
-    df = df[(df["q_pC"] >= 1) | (df["q_pC"] <= -1)] #high level filter
-    df = df[(df["q_pC"] <= 20) & (df["q_pC"] >= -20)] #remove significant anomalies to improve bin accuracy while preserving input size, according to full data histograms
+    df = df[(df["q_pC"] >= 4) | (df["q_pC"] <= -4)] #high level filter
+    #df = df[(df["q_pC"] <= 20) & (df["q_pC"] >= -20)] #remove significant anomalies to improve bin accuracy while preserving input size, according to full data histograms
 
     df.dropna(inplace=True)
     data = df.to_numpy()
     
+    chunk_size = 10000
     #generate histograms using 10000 rows
-    for i in range(0, len(data), 10000):
-        chunk = data[i:i+10000]
+    for i in range(0, len(data), chunk_size):
+        chunk = data[i:i+chunk_size]
 
         h = generate_hist(chunk, phase_bins, q_bins, q_min, q_max)
         
@@ -163,7 +166,7 @@ data_loader = torch.utils.data.DataLoader(
 
 #---------------------------------------------------------------------------------------------------------------------
 #initialize autoencoder
-model = Autoencoder(X_train.shape[1]) #histogram size = 361*200
+model = Autoencoder(X_train.shape[1], 32) #histogram size = 361*200
 model = model.to('cuda') #enable GPU processing
 criterion = nn.MSELoss() #Mean Squared Error loss function
 optimiser = optim.Adam(model.parameters(),
@@ -174,6 +177,7 @@ optimiser = optim.Adam(model.parameters(),
 epochs = 50 #alter for min loss
 outputs = []
 losses = []
+time_marker = time.time()
 
 for epoch in range(epochs):
     for batch in data_loader:
@@ -191,6 +195,8 @@ for epoch in range(epochs):
     losses.append(loss.item())
     outputs.append((epoch, data, recon))
 
+training_time = time.time()-time_marker
+
 #testing
 all_samples = [] #re-purpose all samples
 
@@ -204,13 +210,14 @@ for file in files:
     df = pd.read_csv(file, usecols=["phase_deg", "q_pC"])
 
     #filters
-    df = df[(df["q_pC"] <= 0.6) & (df["q_pC"] >= -0.6)] #low level filter
+    df = df[(df["q_pC"] <= 4) & (df["q_pC"] >= -4)] #low level filter
 
     df.dropna(inplace=True)
     data = df.to_numpy()
-    
-    for i in range(0, len(data), 10000):
-        chunk = data[i:i+10000]
+
+    chunk_size = 10000
+    for i in range(0, len(data), chunk_size):
+        chunk = data[i:i+chunk_size]
 
         h = generate_hist(chunk, phase_bins, q_bins, q_min, q_max)
         h = h.flatten()
@@ -223,7 +230,6 @@ X_test = X_test.to('cuda') #enable GPU processing
 X_test = 2*((X_test - X_test.min()) / (X_test.max() - X_test.min())) - 1 #min-max normalisation between -1, 1
 
 hist_shape = (phase_bins_count-1, q_bins_count-1) #bin sizes - 1  
-threshold = np.mean(losses) + 2 * np.std(losses, ddof=1) #anomaly threshold
 
 #training data reconstructions
 with torch.no_grad(): #prevent weight training
@@ -231,6 +237,8 @@ with torch.no_grad(): #prevent weight training
     train_errors = torch.mean((X_train - recon_train)**2, dim=1) #mean square error for single sample (feature average, dim=1)
     train_errors = train_errors.cpu().numpy() #move to program host memory as numpy array
     print(train_errors)
+
+    threshold = np.mean(train_errors) + 2*np.std(train_errors) #anomaly threshold
 
     normal_id_train = train_errors <= threshold #boolean index of analagous values
     anomaly_id_train = train_errors >= threshold #boolean index of anomalous values - can be used to extract anomalies from input pattern
@@ -273,10 +281,12 @@ with torch.no_grad(): #prevent weight training
 
 #test data reconstructions
 with torch.no_grad(): #prevent weight training
+    time_marker = time.time()
     recon_test = model(X_test)
     test_errors = torch.mean((X_test - recon_test)**2, dim=1) #mean square error for single sample (feature average, dim=1)
     test_errors = test_errors.cpu().numpy() #move to program host memory as numpy array
     print(test_errors)
+    test_time = time.time()-time_marker
 
     normal_id_test = test_errors <= threshold #boolean index of analagous values
     anomaly_id_test = test_errors >= threshold #boolean index of anomalous values - can be used to extract anomalies from input pattern
@@ -284,35 +294,40 @@ with torch.no_grad(): #prevent weight training
     print(normal_id_test)
     X_test = X_test[normal_id_test]         #keep only analagous activity 
     recon_test = recon_test[normal_id_test] 
+    
+    try:
+        #recreate histograms from flattened tensors
+        original = X_test[0].cpu().numpy().reshape(hist_shape) #select first item in training data tensor, move to host memory as numpy array, reshape to original histogram dimensions
+        reconstructed = recon_test[0].cpu().numpy().reshape(hist_shape)
 
-    #recreate histograms from flattened tensors
-    original = X_test[0].cpu().numpy().reshape(hist_shape) #select first item in training data tensor, move to host memory as numpy array, reshape to original histogram dimensions
-    reconstructed = recon_test[0].cpu().numpy().reshape(hist_shape)
+        plt.figure(figsize=(10,4))
 
-    plt.figure(figsize=(10,4))
+        #original
+        plt.subplot(1,2,1) #plot grid layout: 1 row, 2 graphs, 1st graph
+        plt.title("Original Test Data")
+        plt.imshow(original.T, 
+                aspect='auto',
+                origin='lower', 
+                extent=[0, 360, q_min, q_max])
+        plt.colorbar()
+        plt.xlabel("Phase (deg)")
+        plt.ylabel("Charge (pC)")
 
-    #original
-    plt.subplot(1,2,1) #plot grid layout: 1 row, 2 graphs, 1st graph
-    plt.title("Original Test Data")
-    plt.imshow(original.T, 
-               aspect='auto',
-               origin='lower', 
-               extent=[0, 360, q_min, q_max])
-    plt.colorbar()
-    plt.xlabel("Phase (deg)")
-    plt.ylabel("Charge (pC)")
+        #reconstructed
+        plt.subplot(1,2,2) #2nd graph
+        plt.title("Reconstructed Test Data")
+        plt.imshow(reconstructed.T,
+                aspect='auto',
+                origin='lower',
+                extent=[0, 360, q_min, q_max])
+        plt.colorbar()
+        plt.xlabel("Phase (deg)")
+        plt.ylabel("Charge (pC)")
 
-    #reconstructed
-    plt.subplot(1,2,2) #2nd graph
-    plt.title("Reconstructed Test Data")
-    plt.imshow(reconstructed.T,
-               aspect='auto',
-               origin='lower',
-               extent=[0, 360, q_min, q_max])
-    plt.colorbar()
-    plt.xlabel("Phase (deg)")
-    plt.ylabel("Charge (pC)")
+        plt.tight_layout()
+        plt.show()
+    except:
+        print("No analogous activity found")
 
-    plt.tight_layout()
-    plt.show()
+    print(f"Training time: {training_time} \nTesting time: {test_time}")
 
