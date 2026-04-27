@@ -23,51 +23,11 @@ elif domain == "phase":
     x_axis = "Phase"
     unit = "(deg)"
 
-if file_mode == "all":
-    #directory selection
-    directory_val = 1 
-
-    #directory selection
-#Sample 4.4 directories
-if directory_val == 1:
-    directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\0 to 1h\*" #0-1hr
-elif directory_val == 2:
-    directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\252 to 253 h\*" #252 to 253hr
-elif directory_val == 3:
-    directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\255 to 256 h\*" #255 to 256hr
-
-#Sample 4.3 directories
-elif directory_val == 4:
-    directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.3\0 to 1h\*" #0 to 1hr
-elif directory_val == 5:
-    directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.3\95 to 96h (sample opened for inspection at 96 h)\*" #95 to 96hr
-elif directory_val == 6:
-    directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.3\190 to 191h\*" #190 to 191hr
-    
-#noise directories
-elif directory_val == 7:
-    directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\Noise_0 to 120s\*" #0 to 120s
-elif directory_val == 8:
-    directory = r"M:\OneDrive - The University of Manchester\ML_dataset\New datasets_Sample S4.4\Noise_0 to 1000s\*" #0 to 1000s
-#output directories 
-import matplotlib.pyplot as plt
-import pandas as pd
-import numpy as np
-import hdbscan
-from sklearn.preprocessing import StandardScaler
-import glob
-import os
-import time
-import matplotlib.colors as mcolors
-import matplotlib.patches as mpatches
-
-time_marker = time.time()
-
 #parameters
 MIN_CLUSTER_SIZE = 100   
 
 #========dataset initialisation=======
-directory_val = 5
+directory_val = 1
 domain = "phase"
 
 if domain == "time":
@@ -131,6 +91,7 @@ scaler = StandardScaler()
 plt.figure(figsize=(12, 5)) 
 handles = []
 colours = []
+#-------------------------------------------------------------
 
 if file_mode == "single":
     directory = r"M:\OneDrive - The University of Manchester\ML_Individual_Project\clusters_255_anomaly\HDBSCAN_cluster_-1.txt"
@@ -161,11 +122,11 @@ if file_mode == "single":
         colour = scatter.cmap(scatter.norm(i))
         patch = mpatches.Patch(color=colour, label=f"Cluster {i}")
         handles.append(patch)
-
+#----------------------------------------------------------------
 
 if file_mode == "all":
     files = glob.glob(directory)
-    files = files[:2]
+    #files = files[:2]
 
     files.sort(
     key=lambda f: 
@@ -239,7 +200,9 @@ plt.ylabel("Partial Discharge Magnitude (pC)")
 plt.title(f"Gaussian Mixed Model Clustering: PD Magnitude vs {x_axis}")
 #plt.colorbar(scatter, label="Cluster")
 plt.savefig(fname = file_name)
+print(f"Traing Time: {training_time} \nTest Time: {test_time}")
+
 plt.tight_layout()
 plt.show()
 
-print(f"Traing Time: {training_time} \nTest Time: {test_time}")
+
