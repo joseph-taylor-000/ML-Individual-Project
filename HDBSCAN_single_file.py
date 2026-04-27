@@ -10,7 +10,7 @@ import matplotlib.patches as mpatches
 MIN_CLUSTER_SIZE = 100   
 
 #load data
-directory = r"M:\OneDrive - The University of Manchester\ML_Individual_Project\HDBSCAN_cluster_-1.txt"
+directory = r"M:\OneDrive - The University of Manchester\ML_Individual_Project\HDBSCAN_cluster_-1_with_time.txt"
 df = pd.read_csv(directory, usecols=["phase_deg", "q_pC"])
 df.dropna(inplace=True)
 #df = df[(df["q_pC"] <= 5) & (df["q_pC"] >= -5)] #optional filter 
@@ -30,9 +30,9 @@ labels = clusterer.fit_predict(df_scaled)
 print(labels)
 
 #plot
-plt.figure(figsize=(12, 5))
+fig, ax = plt.subplots()
 
-scatter = plt.scatter(
+scatter = ax.scatter(
     df["phase_deg"],
     df["q_pC"],
     c=labels,
@@ -54,7 +54,7 @@ for i in np.unique(labels):
     patch = mpatches.Patch(color=colours[i], label=f"Cluster {i}")
     handles.append(patch)
 
-plt.legend(handles=handles, title="Clusters", loc="upper right")
+plt.legend(handles=handles, title="Clusters")
 
 plt.xlabel("Phase (deg)")
 plt.ylabel("Partial Discharge Magnitude (pC)")

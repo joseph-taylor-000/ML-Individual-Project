@@ -15,7 +15,7 @@ time_marker = time.time()
 MIN_CLUSTER_SIZE = 100   
 
 #========dataset initialisation=======
-directory_val = 2 
+directory_val = 5
 domain = "phase"
 
 if domain == "time":
@@ -199,7 +199,7 @@ for i in np.unique(clusters):
     patch = mpatches.Patch(color=colour, label=f"Cluster {i}")
     handles.append(patch)
 
-ax.legend(handles=handles, title="Clusters", loc="upper left")
+ax.legend(handles=handles, title="Clusters")
 
 ax.set_xlabel(f"{x_axis} {unit}")
 ax.set_ylabel("Partial Discharge Magnitude (pC)")
