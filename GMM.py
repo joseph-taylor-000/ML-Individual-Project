@@ -27,7 +27,7 @@ elif domain == "phase":
 MIN_CLUSTER_SIZE = 100   
 
 #========dataset initialisation=======
-directory_val = 1
+directory_val = 4
 domain = "phase"
 
 if domain == "time":
@@ -88,7 +88,7 @@ gm = GaussianMixture(n_components= NUM_CLUSTERS,
 scaler = StandardScaler()
 
 #plot init
-plt.figure(figsize=(12, 5)) 
+fig, ax =plt.subplots()
 handles = []
 colours = []
 #-------------------------------------------------------------
@@ -108,7 +108,7 @@ if file_mode == "single":
     print(np.unique(clusters))
 
     #plot
-    scatter = plt.scatter(
+    scatter = ax.scatter(
         df[parameter],
         df["q_pC"],
         c=clusters,
@@ -139,14 +139,17 @@ if file_mode == "all":
         df = pd.read_csv(file, usecols=["q_pC", parameter])
         #df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
         df.dropna(inplace=True)
+        df = df.sample(100000, random_state=42)
         scaler.partial_fit(df) #partial mean, sd
     
     print("Training...")
     time_marker = time.time()
     #pass 2 - train GMM model
     for file in files:
+        print(file)
         df = pd.read_csv(file, usecols=["q_pC", parameter])
         df.dropna(inplace=True)
+        df = df.sample(100000, random_state=42)
         numpy_scaled = scaler.transform(df)
         gm = gm.fit(numpy_scaled)
     print("Training Complete")
@@ -158,12 +161,13 @@ if file_mode == "all":
     for file in files:
         df = pd.read_csv(file, usecols=["q_pC", parameter])
         df.dropna(inplace=True)
+        df = df.sample(100000, random_state=42)
         numpy_scaled = scaler.transform(df)
         clusters = gm.predict(numpy_scaled)
         df["cluster"] = clusters
 
         #plot
-        scatter = plt.scatter(
+        scatter = ax.scatter(
             df[parameter],
             df["q_pC"],
             c=clusters,
@@ -174,33 +178,35 @@ if file_mode == "all":
             rasterized = True,
             marker = '.'
         )
+
+        print(f"Saving clusters for part {file.rsplit('part', 1)[1].replace('.csv', '')}...")
+
+        for cluster, group in df.groupby("cluster"): #for each unique cluster, group is the corresponding subsection of dataframe
+            file_path = os.path.join(output_dir, f"Directory_{directory_val}_HDBSCAN_cluster_{cluster}.txt") #separate files for each cluster
+            group.to_csv(
+                file_path,
+                mode="a", #append
+                header=not os.path.exists(file_path), #only write header if first file
+                index=False
+            )
+
     print("Clustering Complete")
     test_time = time.time()-time_marker
 
-    print(f"Saving clusters for part {file.rsplit('part', 1)[1].replace('.csv', '')}...")
-
-    for cluster, group in df.groupby("cluster"): #for each unique cluster, group is the corresponding subsection of dataframe
-        file_path = os.path.join(output_dir, f"Directory_{directory_val}_HDBSCAN_cluster_{cluster}.txt") #separate files for each cluster
-        group.to_csv(
-            file_path,
-            mode="a", #append
-            header=not os.path.exists(file_path), #only write header if first file
-            index=False
-        )
-
+    
     for i in range(NUM_CLUSTERS):
         colour = scatter.cmap(scatter.norm(i))
         patch = mpatches.Patch(color=colour, label=f"Cluster {i}")
         handles.append(patch)
 
-plt.legend(handles=handles, title="Clusters", loc="upper right")
+plt.legend(handles=handles, title="Clusters")
 
 plt.xlabel(f"{x_axis} {unit}")
 plt.ylabel("Partial Discharge Magnitude (pC)")
-plt.title(f"Gaussian Mixed Model Clustering: PD Magnitude vs {x_axis}")
+plt.title(f"Gaussian Mixture Model Clustering: PD Magnitude vs {x_axis}")
 #plt.colorbar(scatter, label="Cluster")
 plt.savefig(fname = file_name)
-print(f"Traing Time: {training_time} \nTest Time: {test_time}")
+print(f"Training Time: {training_time} \nTest Time: {test_time}")
 
 plt.tight_layout()
 plt.show()
