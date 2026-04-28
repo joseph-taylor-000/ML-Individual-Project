@@ -52,7 +52,7 @@ def generate_hist(data, phase_bins, q_bins, q_min, q_max):
 
 #--------------------------------------------------------------------------------------------------------------------------------
 #data initialisation
-directory_val = 3
+directory_val = 1
 use_noise_data = False
 
 #directory selection
@@ -239,6 +239,8 @@ with torch.no_grad(): #prevent weight training
     print(train_errors)
 
     threshold = np.mean(train_errors) + 2*np.std(train_errors) #anomaly threshold
+    print(np.mean(train_errors))
+    print(np.std(train_errors))
 
     normal_id_train = train_errors <= threshold #boolean index of analagous values
     anomaly_id_train = train_errors >= threshold #boolean index of anomalous values - can be used to extract anomalies from input pattern
@@ -292,11 +294,14 @@ with torch.no_grad(): #prevent weight training
     anomaly_id_test = test_errors >= threshold #boolean index of anomalous values - can be used to extract anomalies from input pattern
 
     print(normal_id_test)
+    X_test_anomaly = X_test[anomaly_id_test]
+    recon_test_anomaly = recon_test[anomaly_id_test]
+
     X_test = X_test[normal_id_test]         #keep only analagous activity 
     recon_test = recon_test[normal_id_test] 
     
     try:
-        #recreate histograms from flattened tensors
+        #recreate normal histograms from flattened tensors
         original = X_test[0].cpu().numpy().reshape(hist_shape) #select first item in training data tensor, move to host memory as numpy array, reshape to original histogram dimensions
         reconstructed = recon_test[0].cpu().numpy().reshape(hist_shape)
 
@@ -327,6 +332,36 @@ with torch.no_grad(): #prevent weight training
         plt.tight_layout()
         plt.show()
     except:
+        #recreate anomalous histograms from flattened tensors
+        original = X_test_anomaly[0].cpu().numpy().reshape(hist_shape) #select first item in training data tensor, move to host memory as numpy array, reshape to original histogram dimensions
+        reconstructed = recon_test_anomaly[0].cpu().numpy().reshape(hist_shape)
+
+        plt.figure(figsize=(10,4))
+
+        #original
+        plt.subplot(1,2,1) #plot grid layout: 1 row, 2 graphs, 1st graph
+        plt.title("Original Test Data")
+        plt.imshow(original.T, 
+                aspect='auto',
+                origin='lower', 
+                extent=[0, 360, q_min, q_max])
+        plt.colorbar()
+        plt.xlabel("Phase (deg)")
+        plt.ylabel("Charge (pC)")
+
+        #reconstructed
+        plt.subplot(1,2,2) #2nd graph
+        plt.title("Reconstructed Test Data")
+        plt.imshow(reconstructed.T,
+                aspect='auto',
+                origin='lower',
+                extent=[0, 360, q_min, q_max])
+        plt.colorbar()
+        plt.xlabel("Phase (deg)")
+        plt.ylabel("Charge (pC)")
+
+        plt.tight_layout()
+        plt.show()
         print("No analogous activity found")
 
     print(f"Training time: {training_time} \nTesting time: {test_time}")
