@@ -1,4 +1,4 @@
-<h1 align="center">ML Assisted Partial Discharge Analysis</h1>
+<img src="images/3.14_python.png" width="100" alt="Autoencoder network diagram"><h1 align="center">ML Assisted Partial Discharge Analysis</h1>
 
 <p align="center">
   <img src="images/Autoencoder network diagram.drawio.png" width="600" alt="Autoencoder network diagram">
@@ -14,4 +14,11 @@ These libraries come pre-installed with python 3.14 and do not require additiona
   <li>Matplotlib</li>
   <li>OS</li>
   <li>Time</li>
+</ul>
+Additional Python Libraries:
+These libraries DO NOT come pre-installed with python 3.14 and require additional installation. Instructions for the installation of each library are provided.
+<ul>
+  <li></li>
+  <li></li></li>
+  <li></li>
 </ul>
