@@ -15,7 +15,7 @@ time_marker = time.time()
 MIN_CLUSTER_SIZE = 100   
 
 #========dataset initialisation=======
-directory_val = 5
+directory_val = 4
 domain = "phase"
 
 if domain == "time":
@@ -94,7 +94,7 @@ for file in sample:
     df = pd.read_csv(file, usecols=["q_pC", parameter])
     #df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
     df = df[(df["q_pC"] >= 0.5) | (df["q_pC"] <= -0.5)] #noise filter
-    df = df.sample(10000)
+    df = df.sample(5000, random_state=42)
     indices.append(df.index) #keep sample indices
     df.dropna(inplace=True)
 
@@ -132,11 +132,12 @@ for file in test_data:
     df = pd.read_csv(file, usecols=["q_pC", parameter])
     #df = df[(df["q_pC"] <= 0) & (df["phase_deg"] <= 180)] #optional filter - abnormal region
     df = df[(df["q_pC"] >= 0.5) | (df["q_pC"] <= -0.5)] #noise filter
+    
 
     i = test_data.index(file)
     df = df.drop(index=indices[int(i)]) #remove test data samples before sampling
 
-    df = df.sample(100000)
+    df = df.sample(100000, random_state=42)
     df.dropna(inplace=True)
     scaler.partial_fit(df)
     
@@ -157,7 +158,7 @@ for file in test_data:
     df = df.drop(index=indices[i]) #remove test data samples before sampling
     
 
-    df = df.sample(100000) #if sample size smaller than training samples, data may be added to clusters non-sequentially, which breaks colour index later
+    df = df.sample(100000, random_state=42) #if sample size smaller than training samples, data may be added to clusters non-sequentially, which breaks colour index later
     df.dropna(inplace=True)
     X = scaler.transform(df[["q_pC", parameter]]) #scaling
     cluster,_ = hdbscan.prediction.approximate_predict(clusterer, X) #returns cluster and strengths - strengths not used
