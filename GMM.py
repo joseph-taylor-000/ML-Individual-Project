@@ -182,7 +182,7 @@ if file_mode == "all":
         print(f"Saving clusters for part {file.rsplit('part', 1)[1].replace('.csv', '')}...")
 
         for cluster, group in df.groupby("cluster"): #for each unique cluster, group is the corresponding subsection of dataframe
-            file_path = os.path.join(output_dir, f"Directory_{directory_val}_HDBSCAN_cluster_{cluster}.txt") #separate files for each cluster
+            file_path = os.path.join(output_dir, f"Directory_{directory_val}_GMM_cluster_{cluster}.txt") #separate files for each cluster
             group.to_csv(
                 file_path,
                 mode="a", #append
