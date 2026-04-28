@@ -10,7 +10,7 @@ import os
 import time
 
 #data initialisation
-file_mode = "all" #single / all
+file_mode = "single" #single / all
 domain = "phase"
 
 #domain selection
@@ -94,7 +94,7 @@ colours = []
 #-------------------------------------------------------------
 
 if file_mode == "single":
-    directory = r"M:\OneDrive - The University of Manchester\ML_Individual_Project\clusters_255_anomaly\HDBSCAN_cluster_-1.txt"
+    directory = r"M:\OneDrive - The University of Manchester\ML_Individual_Project\HDBSCAN_cluster_-1_with_time.txt"
 
     df = pd.read_csv(directory, usecols=[parameter, "q_pC"])
     df.dropna(inplace=True)
@@ -106,6 +106,17 @@ if file_mode == "single":
     #clustering
     clusters = gm.fit_predict(numpy_scaled)
     print(np.unique(clusters))
+
+    df["cluster"] = clusters
+
+    for cluster, group in df.groupby("cluster"): #for each unique cluster, group is the corresponding subsection of dataframe
+        file_path = os.path.join(output_dir, f"Directory_{directory_val}_GMM_cluster_{cluster}_single_file.txt") #separate files for each cluster
+        group.to_csv(
+            file_path,
+            mode="a", #append
+            header=not os.path.exists(file_path), #only write header if first file
+            index=False
+        )
 
     #plot
     scatter = ax.scatter(
@@ -206,7 +217,7 @@ plt.ylabel("Partial Discharge Magnitude (pC)")
 plt.title(f"Gaussian Mixture Model Clustering: PD Magnitude vs {x_axis}")
 #plt.colorbar(scatter, label="Cluster")
 plt.savefig(fname = file_name)
-print(f"Training Time: {training_time} \nTest Time: {test_time}")
+#print(f"Training Time: {training_time} \nTest Time: {test_time}")
 
 plt.tight_layout()
 plt.show()
