@@ -11,14 +11,19 @@ The contents of these README file have been collated in this complete repository
 Default Python Libraries:
 These libraries come pre-installed with python 3.14 and do not require additional installation.
 <ul>
-  <li>Matplotlib</li>
+  <li>Glob</li>
   <li>OS</li>
   <li>Time</li>
 </ul>
 Additional Python Libraries:
 These libraries DO NOT come pre-installed with python 3.14 and require additional installation. Instructions for the installation of each library are provided.
 <ul>
-  <li></li>
-  <li></li></li>
-  <li></li>
+  <li><a href = https://pandas.pydata.org/docs/getting_started/install.html>PANDAS</a></li>
+  <li><a href = https://numpy.org/doc/stable/user/absolute_beginners.html>NumPy</a></li>
+  <li><a href = https://matplotlib.org/stable/users/explain/quick_start.html>Matplotlib</a></li>
+  <li><a href = https://pytorch.org/>Pytorch</a></li>
+  <li><a href = https://pypi.org/project/river/>River</a> - River library is supported up to Python version 3.12.0 and requires prerequisite installations of both Cython and Rust. 
+This is because some of the machine learning algorithms available in river require high speed loops or strict memory management.
+By implementing these features using Cython or Rust, python interpreter overhead is lost and this speed can be achieved.
+</li>
 </ul>
