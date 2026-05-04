@@ -282,14 +282,14 @@ marker-type >> marker = ',' #smallest marker type, better efficiency <br>
 A for loop is used to assertain the colours used for each cluster and assign them to the graphs legend.
 
 Cluster information is separated into multiple files:
->>for cluster, group in df.groupby("cluster"): #for each unique cluster, group is the corresponding subsection of dataframe <br>
->>        file_path = os.path.join(output_dir, f"HDBSCAN_cluster_{cluster}.txt") #separate files for each cluster <br>
->>        group.to_csv( <br>
->>            file_path, <br>
->>            mode="a", #append <br>
->>            header=not os.path.exists(file_path), #only write header if first file <br>
->>            index=False <br>
->>        ) <br>
+		for cluster, group in df.groupby("cluster"): #for each unique cluster, group is the corresponding subsection of dataframe <br>
+		        file_path = os.path.join(output_dir, f"HDBSCAN_cluster_{cluster}.txt") #separate files for each cluster <br>
+		        group.to_csv( <br>
+		            file_path, <br>
+		            mode="a", #append <br>
+		            header=not os.path.exists(file_path), #only write header if first file <br>
+		            index=False <br>
+		        ) <br>
 
 <h3>DenStream Approach: </h3>
 This approach uses the DenStream class from the River library. <br>
