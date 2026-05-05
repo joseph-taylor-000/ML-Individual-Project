@@ -346,6 +346,134 @@ For each file in file directory:
 * new file dataframe rows are appended to existing text files
 * dataframe plotted with cluster-based colour grading for each point 
 
+<h2>Gaussian-Mixture-Model Branch: </h2>
+
+<h3>Gaussian-Mixture-Model (GMM)</h3>
+This program assigns points to clusters based on the Gaussian Mixture Module algorithm.
+This algorithm assumes a Gaussian normal distribution of the points within each cluster.
+It assigning probabilties of cluster assignment to each point, based upon calculations of mean and standard deviation done iteratively.
+The final clusters are decided based upon each point's membership liklihood.
+
+	GaussianMixture object initialised with parameters:
+		gm = GaussianMixture(n_components= 4, #number of clusters
+	                     	     covariance_type = 'full', #shape of cluster covariance matrix
+	                     	     random_state= 0, #seed for init params 'random'
+	                     	     init_params= 'kmeans', #initialises EM algorithm using 'kmeans' / 'random'
+	                     	      verbose = 1 #iterations displayed
+	                     	)
+
+Data initialisation:
+* select file load mode (single / all)
+* select domain (phase / time)
+* select file directory
+* define GMM clusterer
+* init scaler
+
+Single File Mode:
+* loads file from directory into data frame
+* uses phase and charge columns
+* drops NaN rows
+* scales data and stores in numpy array
+* lables are assigned by fitting GMM to data
+* plot data on scatter plot
+
+All Files Mode:
+* load files in dataframes iteratively
+* for each file:
+	* on first pass, fit scaler object to data set using partial fit
+	* on second pass, transform data using optimized scaler and determine train cluster distribution parameters
+	* on third pass, transform data using otimized scaler and determine GMM cluster labels
+	* plot data on scatter plot
+
+Plot:
+* phase vs. charge magnitude / time vs. charge magnitude plot 
+* point colours based on labels
+* legend created using patch geometry with label and colour assignment corresponding with scatter plot
+
+<h2>Autoencoder Branch: </h2>
+
+<h3>Autoencoder:</h3>
+This program uses Pytorch to create an autoencoder network. 
+This is a type of neural network used to deconstruct and reconstruct a given input. 
+In the class definition, the process can be described algorithmically:
+
+Important methods:
+* nn.Linear(input_data_size, output_data_size) - applies a linear transformation to data, transforming input to output size<br>
+* nn.ReLU() - applies rectified linear units activation function:<br>
+
+				  3|     /      ReLU: max(0, x) >>> returns x if greater than 0
+				   |    /       This works well for activation as negitive values are ignored,
+				  2|   /        positive values are represented linearly.
+  				   |  /
+				  1| /
+  		_________|/_____
+		-3 -2 -1 0 1 2 3 
+
+Encoder function - encodes data to reduced representation: <br>
+encoder:  Linear transform --> ReLU Activation --> Linear transform --> ReLU Activation --> 
+          Linear transform --> ReLU Activation --> Linear transform (Decreasing input size gradually from initial to initial/16)
+
+Decoder function - decodes encoded data to recreate input data:<br>
+decoder:  Linear transform --> ReLU Activation --> Linear transform --> ReLU Activation --> 
+          Linear transform  (Increasing input size gradually from initial/16 to initial)
+
+Forward function - forward pass through autoencoder network: <br>
+forward: input --> encoder --> code --> decoder --> output
+
+Histogram generator function: <br>
+creates numpy histogram, will be implemented to create PRPD histogram dataset
+
+Data initialisation:
+* directory selection (different time ranges)
+* file sorting - numerical
+* determine max and min charge values accross all files for histogram ranges
+* define linearly spaced bins - phase between 0-360, charge between min-max values
+* create histograms using high-level PD data. Use 10,000 rows per histogram then move to next 10,000
+* flatten histograms to 1 dimensional representation and convert to Tensor for non-linear autoencoder
+* enable GPU processing to decrease training time
+* apply signed min-max (-1, 1) normalisation to avoid phase-magnitude skew, prepare autoencoder for future normalised ranges
+* create data loader to batch training
+
+Autoencoder training:
+* instantiate autoencoder object with training data histogram size as input size
+* criterion - function to minimise , set as mean square error loss function: 
+	* (1/N)Σ{lower: i=0; upper: N}|Y_i - Y{Pk}_i| - will be used to determine loss at each epoch, where  N = epochs, Y_i = input, Y{Pk}_i = reconstructed
+* optimiser - Adam optimiser used to train model, learning rate set to 1e-3 as common, weight decay set to 1e-5 as common
+* epochs = 50 i.e. 50 training cycles
+	In each epoch:
+	* load batch into autoencoder
+	* autoencoder calls forward() method --> puts data through network
+	* calculate loss using criterion (MSE loss)
+optimisation steps:
+	* reset gradient to avoid accumulation
+	* calculate ideal weight values for network using backpropagation (calculate gradients)
+	* update weight values according to Adam optimiser 
+	(weight = weight - learning_rate * gradient, where gradient is d(loss)/d(weight) and learning rate is constant)
+
+Data testing:
+* create histogram set for test data
+* convert set to tensor, signed min-max normalise
+
+Data reconstruction comparisons:
+Compare original input data to autoencoder reconstruction graphically to determine effectiveness of network's relvant feature preservation
+For both training data (complete recreation) and test data (unknown recreation):
+* disable weight training for test period
+* create reconstruction using trained model and input data
+* determine error using mean square difference of input-reconstruction in single dimension (per row)
+* create dataset for histogram representation using input data first element (first sample)
+* create dataset for histogram representation using reconstruction data first element (first sample)
+* filter out histogram entries that do not meet average error threshold, keep only histograms that have analogous activity <br>
+
+Create plots for original and reconstructed: <br>
+	
+			plt.subplot(1,2,1) #plot grid layout: 1 row, 2 graphs, 1st graph
+			    plt.title("xxx Data") 
+			    plt.imshow(original.T, #fix imshow default transposition
+			               aspect='auto',
+			               origin='lower', #fix imshow default origin
+			               extent=[0, 360, q_min, q_max]) #set graph limits 0-360 for phase, min-max for charge
+			    plt.colorbar()
+
 References:
 [1] River DenStream. Available at (https://riverml.xyz/0.20.1/api/cluster/DenStream/) (Accessed 11 March 2026). 
 
