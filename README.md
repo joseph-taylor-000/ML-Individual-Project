@@ -41,13 +41,13 @@ Data initialisation:
 Grouping:
 * create dataframe column for rounded phase degrees
 * create new dataframe with columns:
->>time_us as the index,  
->>the corresponding count values for each phase group,  <br>
->>the total charge for that group in another, <br>
->>the count value of only positive magnitude events, <br>
->>the total charge of positive events, <br>
->>the count value of only negative magnitude events, <br>
->>the total charge value of negative events, <br>
+	* time_us as the index,  
+	* the corresponding count values for each phase group,  <br>
+	* the total charge for that group in another, <br>
+	* the count value of only positive magnitude events, <br>
+	* the total charge of positive events, <br>
+	* the count value of only negative magnitude events, <br>
+	* the total charge value of negative events, <br>
 
 * new dataframe created for plotting with .reset_index() adding a separate column from time_us for the index.
 * RMS calculated for all values, only positive values, only negative values calculated
@@ -71,13 +71,13 @@ Data initialisation:
 Grouping:
 * create dataframe column for rounded phase degrees
 * create new dataframe with columns:
->>rounded phase degrees as the index, <br> 
->>the corresponding count values for each phase group, <br> 
->>the total charge for that group in another, <br>
->>the count value of only positive magnitude events, <br>
->>the total charge of positive events, <br>
->>the count value of only negative magnitude events, <br>
->>the total charge value of negative events, <br>
+	* rounded phase degrees as the index, <br> 
+	* the corresponding count values for each phase group, <br> 
+	* the total charge for that group in another, <br>
+	* the count value of only positive magnitude events, <br>
+	* the total charge of positive events, <br>
+	* the count value of only negative magnitude events, <br>
+	* the total charge value of negative events, <br>
 
 * dataframe is then reindexed to include 360 rows
 * new dataframe created for plotting with .reset_index() adding a separate column from phase_deg_rounded for the index.
@@ -167,11 +167,13 @@ This program:
 * runs k-means 
 * plots time vs. charge with colour groupings and centroids.
 
+Program Flowchart: <br>
+<img src="images/K-means Streaming Algorithm.drawio.png" alt="K-means Diagram">
+
 <h3>Multi-file K-means: </h3>
-#data initialisation
+Data initialisation: <br>
 * directory selected by user
 * domain selected by user
-
 * loads directory as raw string, ignoring '\' conflicts
 * creates list of files in directory using glob
 * files are sorted to be read in numerical order
@@ -201,7 +203,7 @@ transparency >> alpha=1, #no transparency, most efficient  <br>
 rasterization >> rasterized = True, #prevents vector shapes, uses pixels as points for better efficiency <br>
 marker-type >> marker = '.' #smallest marker type, better efficiency <br>
 
-#legend
+Legend:
 * colours added to list from colour map
 * handles created using patch geometry, with each colour and a cluster label
 
@@ -268,6 +270,9 @@ HDBSCAN Class: <br>
 Using approximate_predict, it is possible to integrate multiple files into the HDBSCAN algorithm and plot the results on the same axis.
 This code version uses a for loop to perform approximate cluster predictions for each file within the test data; 
 ensuring that test data samples are not shared with training data using saved indices.
+
+Program Flowchart: <br>
+<img src="images/HDBSCAN Flowchart.drawio.png" alt="HDBSCAN Diagram">
 
 Scatter plot: <br>
 x-axis >> df["time_s"],    
@@ -362,6 +367,9 @@ The final clusters are decided based upon each point's membership liklihood.
 	                     	      verbose = 1 #iterations displayed
 	                     	)
 
+Program Flowchart: <br>
+<img src="images/GMM Flowchart.drawio.png" alt="GMM Diagram">
+
 Data initialisation:
 * select file load mode (single / all)
 * select domain (phase / time)
@@ -423,6 +431,9 @@ forward: input --> encoder --> code --> decoder --> output
 Histogram generator function: <br>
 creates numpy histogram, will be implemented to create PRPD histogram dataset
 
+Program Flowchart: <br>
+<img src="images/Autoencoder Flowchart.drawio.png" alt="Autoencoder Diagram">
+
 Data initialisation:
 * directory selection (different time ranges)
 * file sorting - numerical
@@ -473,7 +484,69 @@ Create plots for original and reconstructed: <br>
 			               origin='lower', #fix imshow default origin
 			               extent=[0, 360, q_min, q_max]) #set graph limits 0-360 for phase, min-max for charge
 			    plt.colorbar()
+				
+<h3>PRPD Histogram Streaming:</h3>
 
-References:
+Data initialisation: <br>
+* directory selection (different time ranges)
+* file sorting - numerical
+* determine max and min charge values accross all files for histogram ranges
+* define linearly spaced bins - phase between 0-360, charge between min-max values
+
+Histogram creation: <br>
+* create empty numpy array (zeros) for global histogram
+* create numpy histogram for each file from file directory
+* add to global histogram
+
+Plot histogram: <br>
+				<code>plt.imshow(
+				    hist.T, #fix imshow transposition
+				    origin="lower", #fix default imshow origin position
+				    aspect="auto",
+				    norm=LogNorm(vmin = 1, vmax = hist.max()), #log colours
+				    extent=[0, 360, q_min, q_max] #set x range, y range
+					)</code>
+		
+<h2>Image-Processing Branch:</h2>
+
+<h3>Image-mapping:</h3>
+The purpose of this program was to collate image captures from specific times and regions to identify patterns or light localisation.
+
+Program Flowchart: <br>
+<img src="images/Image Analysis Flowchart.drawio.png" alt="Image-mapping Diagram">
+
+Data initialisation: <br>
+* select directory
+* select file mode
+* determine start time for peroid (first file in directory)
+* define pixel brightness threshold for noise rejection
+
+Single file: <br>
+* load single file from directory 
+* determine closest image file time
+* modify file list to exclude all other files
+
+All files: <br>
+* select time period for analysis
+* load files from directory
+* determine end time file index for period
+
+Plot light captures:  <br>
+* load images file by file into 2D intensity array
+* split 2D intensity array into x and y components and filter noise using threshold value
+* create 1D array of remaining image intensity values
+* add x and y values to scatter plot with corresponding intensity colour grading
+
+<h2>AI Disclaimer: </h2>
+Throughout this project, ChatGPT was used to aid the planning and general discussion of program logic pre-development.<br>
+This included in-depth negotiations considering conventional approaches and their problem-specific integration solutions.<br>
+For example, one of these discussions was to develop an overview of the typical HDBSCAN library approach and how it could be adapted to a streaming approach.
+A typical prompt would have been 'What is the best library to use for reading many files? Show examples'.<br>
+ChatGPT was also used in code debugging, following typical prompts such as:<br>
+'Explain this error' or 'What is wrong with this code block?'.<br>
+The use of AI within this project conforms to all standards of academic integrity enforced by the University of Manchester [2].
+
+<h2>References:</h2>
 [1] River DenStream. Available at (https://riverml.xyz/0.20.1/api/cluster/DenStream/) (Accessed 11 March 2026). 
-
+[2] “Academic Integrity,” University of Manchester Library, [Online]. Available: https://www.education.library.manchester.ac.uk/mle/academic-integrity/#/lessons/sKF9jqPXxLIj_kjNJqwjLwtEeDtFiNaJ
+. [Accessed: May 5, 2026].
