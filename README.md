@@ -547,6 +547,6 @@ ChatGPT was also used in code debugging, following typical prompts such as:<br>
 The use of AI within this project conforms to all standards of academic integrity enforced by the University of Manchester [2].
 
 <h2>References:</h2>
-[1] River DenStream. Available at (https://riverml.xyz/0.20.1/api/cluster/DenStream/) (Accessed 11 March 2026). 
+[1] River DenStream. Available at (https://riverml.xyz/0.20.1/api/cluster/DenStream/) (Accessed 11 March 2026). <br>
 [2] “Academic Integrity,” University of Manchester Library, [Online]. Available: https://www.education.library.manchester.ac.uk/mle/academic-integrity/#/lessons/sKF9jqPXxLIj_kjNJqwjLwtEeDtFiNaJ
 . [Accessed: May 5, 2026].
